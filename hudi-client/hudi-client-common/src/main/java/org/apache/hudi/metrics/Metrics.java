@@ -120,6 +120,7 @@ public class Metrics {
 
   public static void registerGauge(String metricName, final long value) {
     try {
+      LOG.info("Register Metric Name: " + metricName);
       MetricRegistry registry = Metrics.getInstance().getRegistry();
       HoodieGauge guage = (HoodieGauge) registry.gauge(metricName, () -> new HoodieGauge<>(value));
       guage.setValue(value);

@@ -90,8 +90,10 @@ public class HoodieTableConfig extends HoodieConfig {
   public static final ConfigProperty<String> DATABASE_NAME = ConfigProperty
       .key("hoodie.database.name")
       .noDefaultValue()
-      .withDocumentation("Database name that will be used for incremental query.If different databases have the same table name during incremental query, "
-          + "we can set it to limit the table name under a specific database");
+      .withDocumentation("Database name to identify a table, currently will be used for "
+          + "1. incremental query.If different databases have the same table name during incremental query "
+          + "we can set it to limit the table name under a specific database"
+          + "2. identify a table");
 
   public static final ConfigProperty<String> NAME = ConfigProperty
       .key(HOODIE_TABLE_NAME_KEY)

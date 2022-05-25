@@ -74,6 +74,9 @@ public class FlinkStreamerConfig extends Configuration {
       required = true)
   public String targetBasePath;
 
+  @Parameter(names = {"--target-db"}, description = "Name of target database")
+  public String targetDatabaseName;
+
   @Parameter(names = {"--target-table"}, description = "Name of the target table in Hive.", required = true)
   public String targetTableName;
 
@@ -351,6 +354,7 @@ public class FlinkStreamerConfig extends Configuration {
 
     conf.setString(FlinkOptions.PATH, config.targetBasePath);
     conf.setString(FlinkOptions.TABLE_NAME, config.targetTableName);
+    conf.setString(FlinkOptions.DATABASE_NAME, config.targetDatabaseName);
     // copy_on_write works same as COPY_ON_WRITE
     conf.setString(FlinkOptions.TABLE_TYPE, config.tableType.toUpperCase());
     conf.setBoolean(FlinkOptions.INSERT_CLUSTER, config.insertCluster);

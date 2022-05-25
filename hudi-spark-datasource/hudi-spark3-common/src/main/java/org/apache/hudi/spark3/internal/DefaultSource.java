@@ -52,6 +52,7 @@ public class DefaultSource extends BaseDefaultSource implements TableProvider {
     String instantTime = properties.get(DataSourceInternalWriterHelper.INSTANT_TIME_OPT_KEY);
     String path = properties.get("path");
     String tblName = properties.get(HoodieWriteConfig.TBL_NAME.key());
+    String dbName = properties.get(HoodieWriteConfig.DATABASE_NAME.key());
     boolean populateMetaFields = Boolean.parseBoolean(properties.getOrDefault(HoodieTableConfig.POPULATE_META_FIELDS.key(),
         Boolean.toString(HoodieTableConfig.POPULATE_META_FIELDS.defaultValue())));
     boolean arePartitionRecordsSorted = Boolean.parseBoolean(properties.getOrDefault(HoodieInternalConfig.BULKINSERT_ARE_PARTITIONER_RECORDS_SORTED,
@@ -61,7 +62,8 @@ public class DefaultSource extends BaseDefaultSource implements TableProvider {
     // Auto set the value of "hoodie.parquet.writelegacyformat.enabled"
     tryOverrideParquetWriteLegacyFormatProperty(newProps, schema);
     // 1st arg to createHoodieConfig is not really required to be set. but passing it anyways.
-    HoodieWriteConfig config = DataSourceUtils.createHoodieConfig(newProps.get(HoodieWriteConfig.AVRO_SCHEMA_STRING.key()), path, tblName, newProps);
+    HoodieWriteConfig config = DataSourceUtils.createHoodieConfig(newProps.get(HoodieWriteConfig.AVRO_SCHEMA_STRING.key()), path,
+        dbName, tblName, newProps);
     return new HoodieDataSourceInternalTable(instantTime, config, schema, getSparkSession(),
         getConfiguration(), newProps, populateMetaFields, arePartitionRecordsSorted);
   }

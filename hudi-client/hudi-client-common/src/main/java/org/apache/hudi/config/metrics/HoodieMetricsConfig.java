@@ -47,14 +47,14 @@ public class HoodieMetricsConfig extends HoodieConfig {
 
   public static final ConfigProperty<Boolean> TURN_METRICS_ON = ConfigProperty
       .key(METRIC_PREFIX + ".on")
-      .defaultValue(false)
+      .defaultValue(true)
       .sinceVersion("0.5.0")
       .withDocumentation("Turn on/off metrics reporting. off by default.");
 
   public static final ConfigProperty<MetricsReporterType> METRICS_REPORTER_TYPE_VALUE = ConfigProperty
       .key(METRIC_PREFIX + ".reporter.type")
-      .defaultValue(MetricsReporterType.GRAPHITE)
-      .sinceVersion("0.5.0")
+      .defaultValue(MetricsReporterType.ZHIYAN)
+      .sinceVersion("0.11.0")
       .withDocumentation("Type of metrics reporter.");
 
   // User defined
@@ -69,10 +69,15 @@ public class HoodieMetricsConfig extends HoodieConfig {
       .defaultValue("")
       .sinceVersion("0.11.0")
       .withInferFunction(cfg -> {
-        if (cfg.contains(HoodieTableConfig.NAME)) {
-          return Option.of(cfg.getString(HoodieTableConfig.NAME));
+        StringBuilder sb = new StringBuilder();
+        if (cfg.contains(HoodieTableConfig.DATABASE_NAME)) {
+          sb.append(cfg.getString(HoodieTableConfig.DATABASE_NAME));
+          sb.append(".");
         }
-        return Option.empty();
+        if (cfg.contains(HoodieTableConfig.NAME)) {
+          sb.append(cfg.getString(HoodieTableConfig.NAME));
+        }
+        return sb.length() == 0 ? Option.empty() : Option.of(sb.toString());
       })
       .withDocumentation("The prefix given to the metrics names.");
 
@@ -93,6 +98,12 @@ public class HoodieMetricsConfig extends HoodieConfig {
         return Option.empty();
       })
       .withDocumentation("Enable metrics for locking infra. Useful when operating in multiwriter mode");
+
+  public static final ConfigProperty<Integer> METRICS_EVENT_QUEUE_SIZE = ConfigProperty
+      .key(METRIC_PREFIX + ".event.queue.size")
+      .defaultValue(10_000_000)
+      .sinceVersion("0.11.0")
+      .withDocumentation("The prefix given to the metrics names.");
 
   /**
    * @deprecated Use {@link #TURN_METRICS_ON} and its methods instead
@@ -197,6 +208,8 @@ public class HoodieMetricsConfig extends HoodieConfig {
           HoodieMetricsGraphiteConfig.newBuilder().fromProperties(hoodieMetricsConfig.getProps()).build());
       hoodieMetricsConfig.setDefaultOnCondition(reporterType == MetricsReporterType.CLOUDWATCH,
             HoodieMetricsCloudWatchConfig.newBuilder().fromProperties(hoodieMetricsConfig.getProps()).build());
+      hoodieMetricsConfig.setDefaultOnCondition(reporterType == MetricsReporterType.ZHIYAN,
+          HoodieMetricsZhiyanConfig.newBuilder().fromProperties(hoodieMetricsConfig.getProps()).build());
       return hoodieMetricsConfig;
     }
   }

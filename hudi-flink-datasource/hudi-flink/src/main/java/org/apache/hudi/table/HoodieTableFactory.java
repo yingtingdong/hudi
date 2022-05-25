@@ -169,6 +169,8 @@ public class HoodieTableFactory implements DynamicTableSourceFactory, DynamicTab
       ObjectIdentifier tablePath,
       CatalogTable table,
       ResolvedSchema schema) {
+    // database name
+    conf.setString(FlinkOptions.DATABASE_NAME.key(), tablePath.getDatabaseName());
     // table name
     conf.setString(FlinkOptions.TABLE_NAME.key(), tablePath.getObjectName());
     // hoodie key about options

@@ -65,6 +65,7 @@ public class DefaultSource extends BaseDefaultSource implements DataSourceV2,
     String instantTime = options.get(DataSourceInternalWriterHelper.INSTANT_TIME_OPT_KEY).get();
     String path = options.get("path").get();
     String tblName = options.get(HoodieWriteConfig.TBL_NAME.key()).get();
+    String dbName = options.get(HoodieWriteConfig.DATABASE_NAME.key()).get();
     boolean populateMetaFields = options.getBoolean(HoodieTableConfig.POPULATE_META_FIELDS.key(),
         HoodieTableConfig.POPULATE_META_FIELDS.defaultValue());
     Map<String, String> properties = options.asMap();

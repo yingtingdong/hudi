@@ -29,6 +29,7 @@ import org.apache.hudi.metrics.prometheus.PrometheusReporter;
 import org.apache.hudi.metrics.prometheus.PushGatewayMetricsReporter;
 
 import com.codahale.metrics.MetricRegistry;
+import org.apache.hudi.metrics.zhiyan.ZhiyanMetricsReporter;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -80,6 +81,9 @@ public class MetricsReporterFactory {
         break;
       case CLOUDWATCH:
         reporter = new CloudWatchMetricsReporter(config, registry);
+        break;
+      case ZHIYAN:
+        reporter = new ZhiyanMetricsReporter(config, registry);
         break;
       default:
         LOG.error("Reporter type[" + type + "] is not supported.");

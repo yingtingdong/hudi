@@ -62,6 +62,7 @@ class TestHoodieSparkSqlWriter {
   var tempPath: java.nio.file.Path = _
   var tempBootStrapPath: java.nio.file.Path = _
   var hoodieFooTableName = "hoodie_foo_tbl"
+  val hoodieDefaultDBName = "default_db"
   var tempBasePath: String = _
   var commonTableModifier: Map[String, String] = Map()
   case class StringLongTest(uuid: String, ts: Long)
@@ -490,6 +491,7 @@ class TestHoodieSparkSqlWriter {
   @MethodSource(Array("testDatasourceInsert"))
   def testDatasourceInsertForTableTypeBaseFileMetaFields(tableType: String, populateMetaFields: Boolean, baseFileFormat: String): Unit = {
     val hoodieFooTableName = "hoodie_foo_tbl"
+    val hoodieDefaultDBName = "default_db"
     val fooTableModifier = Map("path" -> tempBasePath,
       HoodieWriteConfig.TBL_NAME.key -> hoodieFooTableName,
       HoodieWriteConfig.BASE_FILE_FORMAT.key -> baseFileFormat,
@@ -510,7 +512,7 @@ class TestHoodieSparkSqlWriter {
     val df = spark.createDataFrame(sc.parallelize(recordsSeq), structType)
     initializeMetaClientForBootstrap(fooTableParams, tableType, addBootstrapPath = false, initBasePath = true)
     val client = spy(DataSourceUtils.createHoodieClient(
-      new JavaSparkContext(sc), modifiedSchema.toString, tempBasePath, hoodieFooTableName,
+      new JavaSparkContext(sc), modifiedSchema.toString, tempBasePath, hoodieDefaultDBName, hoodieFooTableName,
       mapAsJavaMap(fooTableParams)).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]])
 
     HoodieSparkSqlWriter.write(sqlContext, SaveMode.Append, fooTableModifier, df, Option.empty, Option(client))
@@ -571,6 +573,7 @@ class TestHoodieSparkSqlWriter {
         new JavaSparkContext(sc),
         null,
         tempBasePath,
+        hoodieDefaultDBName,
         hoodieFooTableName,
         mapAsJavaMap(fooTableParams)).asInstanceOf[SparkRDDWriteClient[HoodieRecordPayload[Nothing]]])
 

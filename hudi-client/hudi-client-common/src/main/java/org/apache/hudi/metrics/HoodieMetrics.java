@@ -18,6 +18,7 @@
 
 package org.apache.hudi.metrics;
 
+import org.apache.hudi.async.AsyncPostEventService;
 import org.apache.hudi.common.model.HoodieCommitMetadata;
 import org.apache.hudi.common.table.timeline.HoodieTimeline;
 import org.apache.hudi.common.util.Option;
@@ -26,8 +27,12 @@ import org.apache.hudi.config.HoodieWriteConfig;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Timer;
+import org.apache.hudi.tdbank.TdbankHoodieMetricsEvent;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+
+import java.util.Locale;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Wrapper for metrics-related operations.
@@ -49,6 +54,8 @@ public class HoodieMetrics {
   private String conflictResolutionFailureCounterName = null;
   private HoodieWriteConfig config;
   private String tableName;
+  // Add a job id to identify job for each hoodie table.
+  private String hoodieJobId;
   private Timer rollbackTimer = null;
   private Timer cleanTimer = null;
   private Timer commitTimer = null;
@@ -61,10 +68,31 @@ public class HoodieMetrics {
   private Counter conflictResolutionSuccessCounter = null;
   private Counter conflictResolutionFailureCounter = null;
 
+  public static final String TOTAL_PARTITIONS_WRITTEN = "totalPartitionsWritten";
+  public static final String TOTAL_FILES_INSERT = "totalFilesInsert";
+  public static final String TOTAL_FILES_UPDATE = "totalFilesUpdate";
+  public static final String TOTAL_RECORDS_WRITTEN = "totalRecordsWritten";
+  public static final String TOTAL_UPDATE_RECORDS_WRITTEN = "totalUpdateRecordsWritten";
+  public static final String TOTAL_INSERT_RECORDS_WRITTEN = "totalInsertRecordsWritten";
+  public static final String TOTAL_BYTES_WRITTEN = "totalBytesWritten";
+  public static final String TOTAL_SCAN_TIME = "totalScanTime";
+  public static final String TOTAL_CREATE_TIME = "totalCreateTime";
+  public static final String TOTAL_UPSERT_TIME = "totalUpsertTime";
+  public static final String TOTAL_COMPACTED_RECORDS_UPDATED = "totalCompactedRecordsUpdated";
+  public static final String TOTAL_LOGFILES_COMPACTED = "totalLogFilesCompacted";
+  public static final String TOTAL_LOGFILES_SIZE = "totalLogFilesSize";
+
+  // a queue for buffer metrics event.
+  private final LinkedBlockingQueue<TdbankHoodieMetricsEvent> queue = new LinkedBlockingQueue<>();
+
   public HoodieMetrics(HoodieWriteConfig config) {
     this.config = config;
     this.tableName = config.getTableName();
+    this.hoodieJobId = config.getHoodieJobId();
     if (config.isMetricsOn()) {
+      // start post event service.
+      AsyncPostEventService postEventService = new AsyncPostEventService(config, queue);
+      postEventService.start(null);
       Metrics.init(config);
       this.rollbackTimerName = getMetricsName("timer", HoodieTimeline.ROLLBACK_ACTION);
       this.cleanTimerName = getMetricsName("timer", HoodieTimeline.CLEAN_ACTION);
@@ -165,6 +193,25 @@ public class HoodieMetrics {
     Metrics.registerGauge(getMetricsName(actionType, "totalCompactedRecordsUpdated"), 0);
     Metrics.registerGauge(getMetricsName(actionType, "totalLogFilesCompacted"), 0);
     Metrics.registerGauge(getMetricsName(actionType, "totalLogFilesSize"), 0);
+
+    TdbankHoodieMetricsEvent metricEvent = TdbankHoodieMetricsEvent.newBuilder()
+        .withDBName(config.getDatabaseName())
+        .withTableName(config.getTableName())
+        .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf(actionType.toUpperCase(Locale.ROOT)))
+        .addMetrics("totalPartitionsWritten", 0)
+        .addMetrics("totalFilesUpdate", 0)
+        .addMetrics("totalRecordsWritten", 0)
+        .addMetrics("totalUpdateRecordsWritten", 0)
+        .addMetrics("totalInsertRecordsWritten", 0)
+        .addMetrics("totalBytesWritten", 0)
+        .addMetrics("totalScanTime", 0)
+        .addMetrics("totalCreateTime", 0)
+        .addMetrics("totalUpsertTime", 0)
+        .addMetrics("totalCompactedRecordsUpdated", 0)
+        .addMetrics("totalLogFilesCompacted", 0)
+        .addMetrics("totalLogFilesSize", 0)
+        .build();
+    postEvent(metricEvent);
   }
 
   public void updateCommitMetrics(long commitEpochTimeInMs, long durationInMs, HoodieCommitMetadata metadata,
@@ -197,23 +244,55 @@ public class HoodieMetrics {
       Metrics.registerGauge(getMetricsName(actionType, "totalCompactedRecordsUpdated"), totalCompactedRecordsUpdated);
       Metrics.registerGauge(getMetricsName(actionType, "totalLogFilesCompacted"), totalLogFilesCompacted);
       Metrics.registerGauge(getMetricsName(actionType, "totalLogFilesSize"), totalLogFilesSize);
+
+      TdbankHoodieMetricsEvent metricEvent = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf(actionType.toUpperCase(Locale.ROOT)))
+          .addMetrics("totalPartitionsWritten", totalPartitionsWritten)
+          .addMetrics("totalFilesUpdate", totalFilesUpdate)
+          .addMetrics("totalFilesInsert", totalFilesInsert)
+          .addMetrics("totalRecordsWritten", totalRecordsWritten)
+          .addMetrics("totalUpdateRecordsWritten", totalUpdateRecordsWritten)
+          .addMetrics("totalInsertRecordsWritten", totalInsertRecordsWritten)
+          .addMetrics("totalBytesWritten", totalBytesWritten)
+          .addMetrics("totalScanTime", totalTimeTakenByScanner)
+          .addMetrics("totalCreateTime", totalTimeTakenForInsert)
+          .addMetrics("totalUpsertTime", totalTimeTakenForUpsert)
+          .addMetrics("totalCompactedRecordsUpdated", totalCompactedRecordsUpdated)
+          .addMetrics("totalLogFilesCompacted", totalLogFilesCompacted)
+          .addMetrics("totalLogFilesSize", totalLogFilesSize)
+          .build();
+      postEvent(metricEvent);
     }
   }
 
   private void updateCommitTimingMetrics(long commitEpochTimeInMs, long durationInMs, HoodieCommitMetadata metadata,
       String actionType) {
     if (config.isMetricsOn()) {
+      TdbankHoodieMetricsEvent.Builder builder = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf(actionType.toUpperCase(Locale.ROOT)));
       Pair<Option<Long>, Option<Long>> eventTimePairMinMax = metadata.getMinAndMaxEventTime();
       if (eventTimePairMinMax.getLeft().isPresent()) {
         long commitLatencyInMs = commitEpochTimeInMs + durationInMs - eventTimePairMinMax.getLeft().get();
         Metrics.registerGauge(getMetricsName(actionType, "commitLatencyInMs"), commitLatencyInMs);
+        builder = builder.addMetrics("commitLatencyInMs", commitLatencyInMs);
       }
       if (eventTimePairMinMax.getRight().isPresent()) {
         long commitFreshnessInMs = commitEpochTimeInMs + durationInMs - eventTimePairMinMax.getRight().get();
         Metrics.registerGauge(getMetricsName(actionType, "commitFreshnessInMs"), commitFreshnessInMs);
+        builder = builder.addMetrics("commitFreshnessInMs", commitFreshnessInMs);
       }
       Metrics.registerGauge(getMetricsName(actionType, "commitTime"), commitEpochTimeInMs);
       Metrics.registerGauge(getMetricsName(actionType, "duration"), durationInMs);
+
+      TdbankHoodieMetricsEvent event = builder
+          .addMetrics("commitTime", commitEpochTimeInMs)
+          .addMetrics("duration", durationInMs)
+          .build();
+      postEvent(event);
     }
   }
 
@@ -223,6 +302,14 @@ public class HoodieMetrics {
           String.format("Sending rollback metrics (duration=%d, numFilesDeleted=%d)", durationInMs, numFilesDeleted));
       Metrics.registerGauge(getMetricsName("rollback", "duration"), durationInMs);
       Metrics.registerGauge(getMetricsName("rollback", "numFilesDeleted"), numFilesDeleted);
+      TdbankHoodieMetricsEvent event = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf("rollback".toUpperCase(Locale.ROOT)))
+          .addMetrics("duration", durationInMs)
+          .addMetrics("numFilesDeleted", numFilesDeleted)
+          .build();
+      postEvent(event);
     }
   }
 
@@ -232,6 +319,14 @@ public class HoodieMetrics {
           String.format("Sending clean metrics (duration=%d, numFilesDeleted=%d)", durationInMs, numFilesDeleted));
       Metrics.registerGauge(getMetricsName("clean", "duration"), durationInMs);
       Metrics.registerGauge(getMetricsName("clean", "numFilesDeleted"), numFilesDeleted);
+      TdbankHoodieMetricsEvent event = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf("clean".toUpperCase(Locale.ROOT)))
+          .addMetrics("duration", durationInMs)
+          .addMetrics("numFilesDeleted", numFilesDeleted)
+          .build();
+      postEvent(event);
     }
   }
 
@@ -241,6 +336,14 @@ public class HoodieMetrics {
           numFilesFinalized));
       Metrics.registerGauge(getMetricsName("finalize", "duration"), durationInMs);
       Metrics.registerGauge(getMetricsName("finalize", "numFilesFinalized"), numFilesFinalized);
+      TdbankHoodieMetricsEvent event = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf("finalize".toUpperCase(Locale.ROOT)))
+          .addMetrics("duration", durationInMs)
+          .addMetrics("numFilesFinalized", numFilesFinalized)
+          .build();
+      postEvent(event);
     }
   }
 
@@ -248,11 +351,21 @@ public class HoodieMetrics {
     if (config.isMetricsOn()) {
       LOG.info(String.format("Sending index metrics (%s.duration, %d)", action, durationInMs));
       Metrics.registerGauge(getMetricsName("index", String.format("%s.duration", action)), durationInMs);
+      TdbankHoodieMetricsEvent event = TdbankHoodieMetricsEvent.newBuilder()
+          .withDBName(config.getDatabaseName())
+          .withTableName(config.getTableName())
+          .withTableType(TdbankHoodieMetricsEvent.EventType.valueOf("index".toUpperCase(Locale.ROOT)))
+          .addMetrics(String.format("%s.duration", action), durationInMs)
+          .build();
+      postEvent(event);
     }
   }
 
   String getMetricsName(String action, String metric) {
-    return config == null ? null : String.format("%s.%s.%s", config.getMetricReporterMetricsNamePrefix(), action, metric);
+    // if using zhiyan, then we don't report metrics prefix because we will use tags to identify each metrics
+    return config == null ? null :
+      config.getMetricsReporterType() == MetricsReporterType.ZHIYAN ? String.format("%s.%s", action, metric) :
+        String.format("%s.%s.%s", config.getMetricReporterMetricsNamePrefix(), action, metric);
   }
 
   /**
@@ -283,5 +396,10 @@ public class HoodieMetrics {
       return Metrics.getInstance().getRegistry().counter(name);
     }
     return counter;
+  }
+
+  private void postEvent(TdbankHoodieMetricsEvent event) {
+    LOG.info("Post metrics event to queue, queue size now is " + queue.size());
+    queue.add(event);
   }
 }

@@ -237,7 +237,7 @@ public class TestDataSourceUtils {
               DataSourceWriteOptions.PAYLOAD_CLASS_NAME().defaultValue());
       params.put(pair.left, pair.right.toString());
       HoodieWriteConfig hoodieConfig = DataSourceUtils
-              .createHoodieConfig(avroSchemaString, config.getBasePath(), "test", params);
+              .createHoodieConfig(avroSchemaString, config.getBasePath(), "testdb", "test", params);
       assertEquals(pair.right, hoodieConfig.isAsyncClusteringEnabled());
 
       TypedProperties prop = new TypedProperties();

@@ -217,7 +217,7 @@ object Spark31AlterTableCommand extends Logging {
 
     val jsc = new JavaSparkContext(sparkSession.sparkContext)
     val client = DataSourceUtils.createHoodieClient(jsc, schema.toString,
-      path, table.identifier.table, parametersWithWriteDefaults(table.storage.properties).asJava)
+      path, table.identifier.database.getOrElse("default_db"), table.identifier.table, parametersWithWriteDefaults(table.storage.properties).asJava)
 
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val metaClient = HoodieTableMetaClient.builder().setBasePath(path).setConf(hadoopConf).build()

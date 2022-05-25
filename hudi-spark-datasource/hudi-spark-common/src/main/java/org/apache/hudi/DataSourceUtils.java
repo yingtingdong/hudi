@@ -164,8 +164,13 @@ public class DataSourceUtils {
     });
   }
 
+  public static HoodieWriteConfig createHoodieConfig(String schemaStr, String basePath, String tblName,
+                                                     Map<String, String> parameters) {
+    return createHoodieConfig(schemaStr, basePath, "default_db", tblName, parameters);
+  }
+
   public static HoodieWriteConfig createHoodieConfig(String schemaStr, String basePath,
-      String tblName, Map<String, String> parameters) {
+      String dbName, String tblName, Map<String, String> parameters) {
     boolean asyncCompact = Boolean.parseBoolean(parameters.get(DataSourceWriteOptions.ASYNC_COMPACT_ENABLE().key()));
     boolean inlineCompact = !asyncCompact && parameters.get(DataSourceWriteOptions.TABLE_TYPE().key())
         .equals(DataSourceWriteOptions.MOR_TABLE_TYPE_OPT_VAL());
@@ -178,6 +183,7 @@ public class DataSourceUtils {
     }
 
     return builder.forTable(tblName)
+        .withDatabaseName(dbName)
         .withCompactionConfig(HoodieCompactionConfig.newBuilder()
             .withInlineCompaction(inlineCompact).build())
         .withPayloadConfig(HoodiePayloadConfig.newBuilder()
@@ -189,8 +195,8 @@ public class DataSourceUtils {
   }
 
   public static SparkRDDWriteClient createHoodieClient(JavaSparkContext jssc, String schemaStr, String basePath,
-                                                       String tblName, Map<String, String> parameters) {
-    return new SparkRDDWriteClient<>(new HoodieSparkEngineContext(jssc), createHoodieConfig(schemaStr, basePath, tblName, parameters));
+                                                       String dbName, String tblName, Map<String, String> parameters) {
+    return new SparkRDDWriteClient<>(new HoodieSparkEngineContext(jssc), createHoodieConfig(schemaStr, basePath, dbName, tblName, parameters));
   }
 
   public static HoodieWriteResult doWriteOperation(SparkRDDWriteClient client, JavaRDD<HoodieRecord> hoodieRecords,

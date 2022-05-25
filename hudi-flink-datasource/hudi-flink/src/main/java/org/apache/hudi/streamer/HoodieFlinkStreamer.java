@@ -107,6 +107,8 @@ public class HoodieFlinkStreamer {
       Pipelines.clean(conf, pipeline);
     }
 
-    env.execute(cfg.targetTableName);
+    String jobName = cfg.targetDatabaseName.isEmpty() ? cfg.targetTableName :
+        cfg.targetDatabaseName + "." + cfg.targetTableName;
+    env.execute(jobName);
   }
 }

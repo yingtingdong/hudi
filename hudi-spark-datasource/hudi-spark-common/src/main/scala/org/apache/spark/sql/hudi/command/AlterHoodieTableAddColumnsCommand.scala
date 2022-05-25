@@ -106,6 +106,7 @@ object AlterHoodieTableAddColumnsCommand {
       jsc,
       schema.toString,
       hoodieCatalogTable.tableLocation,
+      hoodieCatalogTable.table.identifier.database.getOrElse("default"),
       hoodieCatalogTable.tableName,
       HoodieWriterUtils.parametersWithWriteDefaults(hoodieCatalogTable.catalogProperties).asJava
     )

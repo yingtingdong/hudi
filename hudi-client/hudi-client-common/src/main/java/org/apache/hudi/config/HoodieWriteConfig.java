@@ -54,6 +54,7 @@ import org.apache.hudi.config.metrics.HoodieMetricsDatadogConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsGraphiteConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsJmxConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsPrometheusConfig;
+import org.apache.hudi.config.metrics.HoodieMetricsZhiyanConfig;
 import org.apache.hudi.exception.HoodieNotSupportedException;
 import org.apache.hudi.execution.bulkinsert.BulkInsertSortMode;
 import org.apache.hudi.index.HoodieIndex;
@@ -72,6 +73,7 @@ import org.apache.hudi.table.storage.HoodieStorageLayout;
 import org.apache.hadoop.hbase.io.compress.Compression;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.hudi.tdbank.TdbankConfig;
 import org.apache.orc.CompressionKind;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 
@@ -86,6 +88,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -108,10 +111,20 @@ public class HoodieWriteConfig extends HoodieConfig {
   // It is here so that both the client and deltastreamer use the same reference
   public static final String DELTASTREAMER_CHECKPOINT_KEY = "deltastreamer.checkpoint.key";
 
+  public static final ConfigProperty<String> DATABASE_NAME = ConfigProperty
+      .key(HoodieTableConfig.DATABASE_NAME.key())
+      .noDefaultValue()
+      .withDocumentation("Database name that will be used for identify table related to different databases.");
+
   public static final ConfigProperty<String> TBL_NAME = ConfigProperty
       .key(HoodieTableConfig.HOODIE_TABLE_NAME_KEY)
       .noDefaultValue()
       .withDocumentation("Table name that will be used for registering with metastores like HMS. Needs to be same across runs.");
+
+  public static final ConfigProperty<String> HOODIE_JOB_ID = ConfigProperty
+      .key("hoodie.job.id")
+      .noDefaultValue()
+      .withDocumentation("JobId use to identify a hoodie job. (e.g A spark job writes data to hoodie table.)");
 
   public static final ConfigProperty<String> PRECOMBINE_FIELD_NAME = ConfigProperty
       .key("hoodie.datasource.write.precombine.field")
@@ -960,6 +973,14 @@ public class HoodieWriteConfig extends HoodieConfig {
   public HoodieTableType getTableType() {
     return HoodieTableType.valueOf(getStringOrDefault(
         HoodieTableConfig.TYPE, HoodieTableConfig.TYPE.defaultValue().name()).toUpperCase());
+  }
+
+  public String getDatabaseName() {
+    return getString(DATABASE_NAME);
+  }
+
+  public String getHoodieJobId() {
+    return getString(HOODIE_JOB_ID);
   }
 
   public String getPreCombineField() {
@@ -1820,6 +1841,42 @@ public class HoodieWriteConfig extends HoodieConfig {
         HoodieMetricsDatadogConfig.METRIC_TAG_VALUES, ",").split("\\s*,\\s*")).collect(Collectors.toList());
   }
 
+  public int getZhiyanApiTimeoutSeconds() {
+    return getInt(HoodieMetricsZhiyanConfig.API_TIMEOUT_IN_SECONDS);
+  }
+
+  public int getZhiyanReportPeriodSeconds() {
+    return getInt(HoodieMetricsZhiyanConfig.REPORT_PERIOD_SECONDS);
+  }
+
+  public String getZhiyanReportServiceURL() {
+    return getString(HoodieMetricsZhiyanConfig.REPORT_SERVICE_URL);
+  }
+
+  public String getZhiyanReportServicePath() {
+    return getString(HoodieMetricsZhiyanConfig.REPORT_SERVICE_PATH);
+  }
+
+  public String getZhiyanHoodieJobName() {
+    String zhiyanJobName = getString(HoodieMetricsZhiyanConfig.ZHIYAN_JOB_NAME);
+    if (getBoolean(HoodieMetricsZhiyanConfig.ZHIYAN_RANDOM_JOBNAME_SUFFIX)) {
+      if (!zhiyanJobName.isEmpty()) {
+        return zhiyanJobName + "." + UUID.randomUUID();
+      } else {
+        return engineType + "." + UUID.randomUUID();
+      }
+    }
+    return zhiyanJobName;
+  }
+
+  public String getZhiyanAppMask() {
+    return getString(HoodieMetricsZhiyanConfig.ZHIYAN_METRICS_HOODIE_APPMASK);
+  }
+
+  public String getZhiyanSeclvlEnvName() {
+    return getString(HoodieMetricsZhiyanConfig.ZHIYAN_METRICS_HOODIE_SECLVLENNAME);
+  }
+
   public int getCloudWatchReportPeriodSeconds() {
     return getInt(HoodieMetricsCloudWatchConfig.REPORT_PERIOD_SECONDS);
   }
@@ -1870,6 +1927,10 @@ public class HoodieWriteConfig extends HoodieConfig {
 
   public String getMetricReporterMetricsNamePrefix() {
     return getStringOrDefault(HoodieMetricsConfig.METRICS_REPORTER_PREFIX);
+  }
+
+  public int getMetricEventQueueSize() {
+    return getIntOrDefault(HoodieMetricsConfig.METRICS_EVENT_QUEUE_SIZE);
   }
 
   /**
@@ -2135,6 +2196,21 @@ public class HoodieWriteConfig extends HoodieConfig {
     return metastoreConfig.enableMetastore();
   }
 
+  /**
+   * Tdbank configs
+   * */
+  public String getTdbankTdmAddr() {
+    return getString(TdbankConfig.TDBANK_TDM_ADDR);
+  }
+
+  public int getTdbankTdmPort() {
+    return getInt(TdbankConfig.TDBANK_TDM_PORT);
+  }
+
+  public String getTdbankBid() {
+    return getString(TdbankConfig.TDBANK_BID);
+  }
+
   public static class Builder {
 
     protected final HoodieWriteConfig writeConfig = new HoodieWriteConfig();
@@ -2159,6 +2235,7 @@ public class HoodieWriteConfig extends HoodieConfig {
     private boolean isMetricsJmxConfigSet = false;
     private boolean isMetricsGraphiteConfigSet = false;
     private boolean isLayoutConfigSet = false;
+    private boolean isTdbankConfigSet = false;
 
     public Builder withEngineType(EngineType engineType) {
       this.engineType = engineType;
@@ -2213,6 +2290,11 @@ public class HoodieWriteConfig extends HoodieConfig {
 
     public Builder forTable(String tableName) {
       writeConfig.setValue(TBL_NAME, tableName);
+      return this;
+    }
+
+    public Builder withDatabaseName(String dbName) {
+      writeConfig.setValue(DATABASE_NAME, dbName);
       return this;
     }
 
@@ -2583,6 +2665,8 @@ public class HoodieWriteConfig extends HoodieConfig {
           HoodiePreCommitValidatorConfig.newBuilder().fromProperties(writeConfig.getProps()).build());
       writeConfig.setDefaultOnCondition(!isLayoutConfigSet,
           HoodieLayoutConfig.newBuilder().fromProperties(writeConfig.getProps()).build());
+      writeConfig.setDefaultOnCondition(!isTdbankConfigSet,
+          TdbankConfig.newBuilder().fromProperties(writeConfig.getProps()).build());
       writeConfig.setDefaultValue(TIMELINE_LAYOUT_VERSION_NUM, String.valueOf(TimelineLayoutVersion.CURR_VERSION));
 
       // isLockProviderPropertySet must be fetched before setting defaults of HoodieLockConfig
