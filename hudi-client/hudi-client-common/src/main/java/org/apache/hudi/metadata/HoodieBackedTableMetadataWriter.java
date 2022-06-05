@@ -65,6 +65,7 @@ import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsGraphiteConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsJmxConfig;
+import org.apache.hudi.config.metrics.HoodieMetricsZhiyanConfig;
 import org.apache.hudi.exception.HoodieException;
 import org.apache.hudi.exception.HoodieIndexException;
 import org.apache.hudi.exception.HoodieMetadataException;
@@ -314,6 +315,16 @@ public abstract class HoodieBackedTableMetadataWriter implements HoodieTableMeta
           builder.withMetricsJmxConfig(HoodieMetricsJmxConfig.newBuilder()
               .onJmxPort(writeConfig.getJmxPort())
               .toJmxHost(writeConfig.getJmxHost())
+              .build());
+          break;
+        case ZHIYAN:
+          builder.withMetricsZhiyanConfig(HoodieMetricsZhiyanConfig.newBuilder()
+              .withReportServiceUrl(writeConfig.getZhiyanReportServiceURL())
+              .withApiTimeout(writeConfig.getZhiyanApiTimeoutSeconds())
+              .withAppMask(writeConfig.getZhiyanAppMask())
+              .withReportPeriodSeconds(writeConfig.getZhiyanReportPeriodSeconds())
+              .withSeclvlEnvName(writeConfig.getZhiyanSeclvlEnvName())
+              .withJobName(writeConfig.getZhiyanHoodieJobName())
               .build());
           break;
         case DATADOG:

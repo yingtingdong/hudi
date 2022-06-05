@@ -2234,6 +2234,8 @@ public class HoodieWriteConfig extends HoodieConfig {
     private boolean isPreCommitValidationConfigSet = false;
     private boolean isMetricsJmxConfigSet = false;
     private boolean isMetricsGraphiteConfigSet = false;
+
+    private boolean isMetricsZhiyanConfig = false;
     private boolean isLayoutConfigSet = false;
     private boolean isTdbankConfigSet = false;
 
@@ -2426,6 +2428,12 @@ public class HoodieWriteConfig extends HoodieConfig {
     public Builder withMetricsGraphiteConfig(HoodieMetricsGraphiteConfig mericsGraphiteConfig) {
       writeConfig.getProps().putAll(mericsGraphiteConfig.getProps());
       isMetricsGraphiteConfigSet = true;
+      return this;
+    }
+
+    public Builder withMetricsZhiyanConfig(HoodieMetricsZhiyanConfig metricsZhiyanConfig) {
+      writeConfig.getProps().putAll(metricsZhiyanConfig.getProps());
+      isMetricsZhiyanConfig = true;
       return this;
     }
 
