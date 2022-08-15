@@ -24,6 +24,8 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,14 +35,19 @@ import java.util.List;
  * Utilities to project the row data with given positions.
  */
 public class RowDataProjection implements Serializable {
+  private static final Logger LOG = LogManager.getLogger(RowDataProjection.class);
+
   private static final long serialVersionUID = 1L;
 
   private final RowData.FieldGetter[] fieldGetters;
+
+  private final LogicalType[] types;
 
   private RowDataProjection(LogicalType[] types, int[] positions) {
     ValidationUtils.checkArgument(types.length == positions.length,
         "types and positions should have the equal number");
     this.fieldGetters = new RowData.FieldGetter[types.length];
+    this.types = types;
     for (int i = 0; i < types.length; i++) {
       final LogicalType type = types[i];
       final int pos = positions[i];
@@ -69,7 +76,12 @@ public class RowDataProjection implements Serializable {
   public RowData project(RowData rowData) {
     GenericRowData genericRowData = new GenericRowData(this.fieldGetters.length);
     for (int i = 0; i < this.fieldGetters.length; i++) {
-      final Object val = this.fieldGetters[i].getFieldOrNull(rowData);
+      Object val = null;
+      try {
+        val = rowData.isNullAt(i) ? null : this.fieldGetters[i].getFieldOrNull(rowData);
+      } catch (Throwable e) {
+        LOG.error(String.format("position=%s, fieldType=%s,\n data=%s", i, types[i].toString(), rowData.toString()));
+      }
       genericRowData.setField(i, val);
     }
     return genericRowData;
@@ -81,7 +93,12 @@ public class RowDataProjection implements Serializable {
   public Object[] projectAsValues(RowData rowData) {
     Object[] values = new Object[this.fieldGetters.length];
     for (int i = 0; i < this.fieldGetters.length; i++) {
-      final Object val = this.fieldGetters[i].getFieldOrNull(rowData);
+      Object val = null;
+      try {
+        val = rowData.isNullAt(i) ? null : this.fieldGetters[i].getFieldOrNull(rowData);
+      } catch (Throwable e) {
+        LOG.error(String.format("position=%s, fieldType=%s,\n data=%s", i, types[i].toString(), rowData.toString()));
+      }
       values[i] = val;
     }
     return values;
