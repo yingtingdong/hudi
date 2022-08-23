@@ -83,6 +83,7 @@ import org.apache.spark.util.LongAccumulator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -421,7 +422,7 @@ public class UtilHelpers {
       statement.setQueryTimeout(Integer.parseInt(options.get(JDBCOptions.JDBC_QUERY_TIMEOUT())));
       statement.executeQuery();
     } catch (SQLException e) {
-      throw new HoodieException(e);
+      return false;
     }
     return true;
   }
@@ -445,12 +446,23 @@ public class UtilHelpers {
         statement.setQueryTimeout(Integer.parseInt(options.get("queryTimeout")));
         try (ResultSet rs = statement.executeQuery()) {
           StructType structType;
+          Object[] methodParas;
+          Method method = getMethodByName(JdbcUtils.class, "getSchema");
+          int parasCount = getMethodParasCount(method);
+
           if (Boolean.parseBoolean(options.get("nullable"))) {
-            structType = JdbcUtils.getSchema(rs, dialect, true);
+            methodParas = parasCount == 3 ? new Object[] {rs, dialect, true} : new Object[] {method, rs, dialect, url, true};
           } else {
-            structType = JdbcUtils.getSchema(rs, dialect, false);
+            methodParas = parasCount == 3 ? new Object[] {rs, dialect, false} : new Object[] {method, rs, dialect, url, false};
           }
-          return AvroConversionUtils.convertStructTypeToAvroSchema(structType, table, "hoodie." + table);
+
+          structType = getStructTypeReflection(method, methodParas);
+
+          if (structType != null) {
+            return AvroConversionUtils.convertStructTypeToAvroSchema(structType, table, "hoodie." + table);
+          } else {
+            throw new HoodieException(String.format("%s structType can not null!", table));
+          }
         }
       }
     } else {
@@ -571,5 +583,23 @@ public class UtilHelpers {
     }
     Schema schema = schemaResolver.getTableAvroSchema(false);
     return schema.toString();
+  }
+
+  public static Method getMethodByName(Class clazz, String methodName) {
+    return Arrays.stream(clazz.getDeclaredMethods())
+        .filter(m -> m.getName().equalsIgnoreCase(methodName))
+        .findFirst().orElse(null);
+  }
+
+  public static int getMethodParasCount(Method method) {
+    return method.getParameterCount();
+  }
+
+  public static StructType getStructTypeReflection(Method method, Object... objs) throws Exception {
+    if (method != null) {
+      return (StructType) method.invoke(null, objs);
+    } else {
+      return null;
+    }
   }
 }

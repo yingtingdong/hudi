@@ -174,7 +174,7 @@
   <dependencies>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-sql_2.12</artifactId>
       <version>${spark33.version}</version>
       <scope>provided</scope>
@@ -182,7 +182,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-catalyst_2.12</artifactId>
       <version>${spark33.version}</version>
       <scope>provided</scope>
@@ -190,7 +190,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-core_2.12</artifactId>
       <version>${spark33.version}</version>
       <scope>provided</scope>

@@ -62,7 +62,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
       <exclusions>
         <exclusion>
@@ -89,7 +89,7 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-avro_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>test</scope>

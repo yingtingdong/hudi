@@ -646,12 +646,12 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
     </dependency>
 
@@ -662,14 +662,14 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-streaming_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-streaming-kafka-0-10_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
     </dependency>

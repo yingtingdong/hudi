@@ -250,11 +250,11 @@
 
     <!-- Spark -->
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.spark</groupId>
+      <groupId>${spark.groupId}</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
     </dependency>
 

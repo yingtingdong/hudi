@@ -21,10 +21,10 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>hudi-spark2_${scala.binary.version}</artifactId>
+  <artifactId>hudi-spark2_2.11</artifactId>
   <version>0.12.1</version>
 
-  <name>hudi-spark2_${scala.binary.version}</name>
+  <name>hudi-spark2_2.11</name>
   <packaging>jar</packaging>
 
   <properties>
@@ -185,13 +185,13 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hudi</groupId>
-      <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
+      <artifactId>hudi-spark-common_2.11</artifactId>
       <version>${project.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_${scala.binary.version}</artifactId>
+      <groupId>${spark.groupId}</groupId>
+      <artifactId>spark-sql_2.11</artifactId>
       <version>${spark2.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
@@ -230,7 +230,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hudi</groupId>
-      <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
+      <artifactId>hudi-spark-common_2.11</artifactId>
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <type>test-jar</type>
