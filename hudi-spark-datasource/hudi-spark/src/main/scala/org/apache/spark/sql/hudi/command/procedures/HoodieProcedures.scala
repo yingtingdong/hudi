@@ -80,6 +80,7 @@ object HoodieProcedures {
       ,(ValidateHoodieSyncProcedure.NAME, ValidateHoodieSyncProcedure.builder)
       ,(ShowInvalidParquetProcedure.NAME, ShowInvalidParquetProcedure.builder)
       ,(HiveSyncProcedure.NAME, HiveSyncProcedure.builder)
+      ,(BackupInvalidParquetProcedure.NAME, BackupInvalidParquetProcedure.builder)
     )
   }
 }
