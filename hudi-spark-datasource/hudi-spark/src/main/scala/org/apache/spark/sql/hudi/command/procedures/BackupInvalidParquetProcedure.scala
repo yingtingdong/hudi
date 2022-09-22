@@ -21,15 +21,18 @@ import org.apache.hadoop.fs.Path
 import org.apache.hudi.client.common.HoodieSparkEngineContext
 import org.apache.hudi.common.config.SerializableConfiguration
 import org.apache.hudi.common.fs.FSUtils
+import org.apache.hudi.common.model.HoodieFileFormat
+import org.apache.hudi.common.util.BaseFileUtils
 import org.apache.parquet.format.converter.ParquetMetadataConverter.SKIP_ROW_GROUPS
 import org.apache.parquet.hadoop.ParquetFileReader
 import org.apache.spark.api.java.JavaRDD
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 import java.util.function.Supplier
 
-class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder {
+class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder with Logging {
   private val PARAMETERS = Array[ProcedureParameter](
     ProcedureParameter.required(0, "path", DataTypes.StringType, None)
   )
@@ -62,9 +65,15 @@ class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder 
         val filePath = status.getPath
         var isInvalid = false
         if (filePath.toString.endsWith(".parquet")) {
-          try ParquetFileReader.readFooter(serHadoopConf.get(), filePath, SKIP_ROW_GROUPS).getFileMetaData catch {
+          try {
+            // check footer
+            ParquetFileReader.readFooter(serHadoopConf.get(), filePath, SKIP_ROW_GROUPS).getFileMetaData
+
+            // check row group
+            BaseFileUtils.getInstance(HoodieFileFormat.PARQUET).readAvroRecords(serHadoopConf.get(), filePath)
+          } catch {
             case e: Exception =>
-              isInvalid = e.getMessage.contains("is not a Parquet file")
+              isInvalid = true
               filePath.getFileSystem(serHadoopConf.get()).rename(filePath, new Path(backupPath, filePath.getName))
           }
         }
