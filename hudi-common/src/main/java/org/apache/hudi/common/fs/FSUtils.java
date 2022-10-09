@@ -191,8 +191,18 @@ public class FSUtils {
     return fullFileName.split("_")[2].split("\\.")[0];
   }
 
-  public static long getFileSize(FileSystem fs, Path path) throws IOException {
-    return fs.getFileStatus(path).getLen();
+  public static long getFileSize(FileSystem fs, Path path) {
+    try {
+      if (fs.exists(path)) {
+        return fs.getFileStatus(path).getLen();
+      } else {
+        LOG.warn("getFileSize: " + path + " file not exists!");
+        return 0L;
+      }
+    } catch (IOException e) {
+      LOG.error("getFileSize: " + path + " error:", e);
+      return 0L;
+    }
   }
 
   public static String getFileId(String fullFileName) {
