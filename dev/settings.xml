@@ -1,23 +1,4 @@
 <settings>
-    <proxies>
-        <proxy>
-            <id>dev http</id>
-            <active>true</active>
-            <protocol>http</protocol>
-            <host>web-proxy.oa.com</host>
-            <port>8080</port>
-            <nonProxyHosts>mirrors.tencent.com|qq.com|localhost|127.0.0.1|*.oa.com|repo.maven.apache.org|packages.confluent.io</nonProxyHosts>
-        </proxy>
-        <proxy>
-            <id>dev https</id>
-            <active>true</active>
-            <protocol>https</protocol>
-            <host>web-proxy.oa.com</host>
-            <port>8080</port>
-            <nonProxyHosts>mirrors.tencent.com|qq.com|localhost|127.0.0.1|*.oa.com|repo.maven.apache.org|packages.confluent.io</nonProxyHosts>
-        </proxy>
-    </proxies>
-
     <offline>false</offline>
 
     <profiles>
