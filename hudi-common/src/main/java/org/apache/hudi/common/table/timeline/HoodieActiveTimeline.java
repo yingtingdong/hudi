@@ -39,6 +39,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,6 +50,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static org.apache.hudi.common.table.timeline.HoodieInstantTimeGenerator.SECS_INSTANT_TIMESTAMP_FORMAT;
 
 /**
  * Represents the Active Timeline for the Hoodie table. Instants for the last 12 hours (configurable) is in the
@@ -123,6 +127,20 @@ public class HoodieActiveTimeline extends HoodieDefaultTimeline {
       }
     }
     return parsedDate;
+  }
+
+  /**
+   * Check if the instantTime is in SECS_INSTANT_TIMESTAMP_FORMAT format.
+   */
+  public static boolean checkDateTime(String instantTime) {
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern(SECS_INSTANT_TIMESTAMP_FORMAT);
+    boolean flag = true;
+    try {
+      LocalDateTime.parse(instantTime, dtf);
+    } catch (Exception e) {
+      flag = false;
+    }
+    return flag;
   }
 
   /**

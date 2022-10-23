@@ -104,6 +104,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,6 +116,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.hudi.common.model.HoodieCommitMetadata.SCHEMA_KEY;
+import static org.apache.hudi.common.model.TableServiceType.CLEAN;
 
 /**
  * Abstract Write Client providing functionality for performing commit, index updates and rollback
@@ -306,14 +308,20 @@ public abstract class BaseHoodieWriteClient<T extends HoodieRecordPayload, I, K,
   protected abstract HoodieTable<T, I, K, O> createTable(HoodieWriteConfig config, Configuration hadoopConf);
 
   void emitCommitMetrics(String instantTime, HoodieCommitMetadata metadata, String actionType) {
-    if (writeTimer != null) {
-      long durationInMs = metrics.getDurationInMs(writeTimer.stop());
-      // instantTime could be a non-standard value, so use `parseDateFromInstantTimeSafely`
-      // e.g. INIT_INSTANT_TS, METADATA_BOOTSTRAP_INSTANT_TS and FULL_BOOTSTRAP_INSTANT_TS in HoodieTimeline
-      HoodieActiveTimeline.parseDateFromInstantTimeSafely(instantTime).ifPresent(parsedInstant ->
-          metrics.updateCommitMetrics(parsedInstant.getTime(), durationInMs, metadata, actionType)
-      );
-      writeTimer = null;
+    try {
+      if (writeTimer != null) {
+        long durationInMs = metrics.getDurationInMs(writeTimer.stop());
+        long commitEpochTimeInMs = 0;
+        if (HoodieActiveTimeline.checkDateTime(instantTime)) {
+          commitEpochTimeInMs = HoodieActiveTimeline.parseDateFromInstantTime(instantTime).getTime();
+        }
+        metrics.updateCommitMetrics(commitEpochTimeInMs, durationInMs,
+            metadata, actionType);
+        writeTimer = null;
+      }
+    } catch (ParseException e) {
+      throw new HoodieCommitException("Failed to complete commit " + config.getBasePath() + " at time " + instantTime
+          + "Instant time is not of valid format", e);
     }
   }
 
@@ -862,7 +870,7 @@ public abstract class BaseHoodieWriteClient<T extends HoodieRecordPayload, I, K,
       LOG.info("Cleaner started");
       // proceed only if multiple clean schedules are enabled or if there are no pending cleans.
       if (scheduleInline) {
-        scheduleTableServiceInternal(cleanInstantTime, Option.empty(), TableServiceType.CLEAN);
+        scheduleTableServiceInternal(cleanInstantTime, Option.empty(), CLEAN);
         table.getMetaClient().reloadActiveTimeline();
       }
     }
@@ -1286,7 +1294,7 @@ public abstract class BaseHoodieWriteClient<T extends HoodieRecordPayload, I, K,
    * @param extraMetadata Extra Metadata to be stored
    */
   protected boolean scheduleCleaningAtInstant(String instantTime, Option<Map<String, String>> extraMetadata) throws HoodieIOException {
-    return scheduleTableService(instantTime, extraMetadata, TableServiceType.CLEAN).isPresent();
+    return scheduleTableService(instantTime, extraMetadata, CLEAN).isPresent();
   }
 
   /**
