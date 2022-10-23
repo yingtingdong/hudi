@@ -23,7 +23,6 @@ import com.codahale.metrics.MetricRegistry;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.metrics.MetricsReporter;
 
-import java.io.Closeable;
 import java.util.concurrent.TimeUnit;
 
 public class ZhiyanMetricsReporter extends MetricsReporter {
@@ -52,11 +51,6 @@ public class ZhiyanMetricsReporter extends MetricsReporter {
   @Override
   public void report() {
     reporter.report();
-  }
-
-  @Override
-  public Closeable getReporter() {
-    return reporter;
   }
 
   @Override

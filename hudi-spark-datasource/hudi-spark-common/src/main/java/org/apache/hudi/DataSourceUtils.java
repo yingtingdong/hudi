@@ -195,6 +195,11 @@ public class DataSourceUtils {
   }
 
   public static SparkRDDWriteClient createHoodieClient(JavaSparkContext jssc, String schemaStr, String basePath,
+                                                       String tblName, Map<String, String> parameters) {
+    return createHoodieClient(jssc, schemaStr, basePath, "default", tblName, parameters);
+  }
+
+  public static SparkRDDWriteClient createHoodieClient(JavaSparkContext jssc, String schemaStr, String basePath,
                                                        String dbName, String tblName, Map<String, String> parameters) {
     return new SparkRDDWriteClient<>(new HoodieSparkEngineContext(jssc), createHoodieConfig(schemaStr, basePath, dbName, tblName, parameters));
   }
