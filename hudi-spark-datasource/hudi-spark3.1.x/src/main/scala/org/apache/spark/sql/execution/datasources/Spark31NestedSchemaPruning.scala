@@ -17,15 +17,15 @@
 
 package org.apache.spark.sql.execution.datasources
 
-import org.apache.hudi.{HoodieBaseRelation, SparkAdapterSupport}
-import org.apache.spark.sql.HoodieSpark3CatalystPlanUtils
-import org.apache.spark.sql.catalyst.expressions.{And, AttributeReference, AttributeSet, Expression, NamedExpression, ProjectionOverSchema}
+import org.apache.hudi.HoodieBaseRelation
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, Attribute, AttributeReference, Expression, NamedExpression, ProjectionOverSchema}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LeafNode, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.datasources.orc.OrcFileFormat
+import org.apache.spark.sql.execution.datasources.parquet.ParquetFileFormat
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructType}
-import org.apache.spark.sql.util.SchemaUtils.restoreOriginalOutputNames
 
 /**
  * Prunes unnecessary physical columns given a [[PhysicalOperation]] over a data source relation.
@@ -86,10 +86,8 @@ class Spark31NestedSchemaPruning extends Rule[LogicalPlan] {
       // each schemata, assuming the fields in prunedDataSchema are a subset of the fields
       // in dataSchema.
       if (countLeaves(dataSchema) > countLeaves(prunedDataSchema)) {
-        val planUtils = SparkAdapterSupport.sparkAdapter.getCatalystPlanUtils.asInstanceOf[HoodieSpark3CatalystPlanUtils]
-
         val prunedRelation = outputRelationBuilder(prunedDataSchema)
-        val projectionOverSchema = planUtils.projectOverSchema(prunedDataSchema, AttributeSet(output))
+        val projectionOverSchema = ProjectionOverSchema(prunedDataSchema)
 
         Some(buildNewProjection(projects, normalizedProjects, normalizedFilters,
           prunedRelation, projectionOverSchema))
@@ -193,6 +191,16 @@ class Spark31NestedSchemaPruning extends Rule[LogicalPlan] {
       case struct: StructType =>
         struct.map(field => countLeaves(field.dataType)).sum
       case _ => 1
+    }
+  }
+
+  def restoreOriginalOutputNames(
+                                  projectList: Seq[NamedExpression],
+                                  originalNames: Seq[String]): Seq[NamedExpression] = {
+    projectList.zip(originalNames).map {
+      case (attr: Attribute, name) => attr.withName(name)
+      case (alias: Alias, name) => alias
+      case (other, _) => other
     }
   }
 }

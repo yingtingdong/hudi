@@ -381,7 +381,7 @@
 <!--                    <exclude>org.sl4fj:slf4j-nop</exclude>-->
 <!--                    <exclude>org.sl4fj:slf4j-jcl</exclude>-->
 <!--                    <exclude>log4j:log4j</exclude>-->
-                    <exclude>ch.qos.logback:logback-classic</exclude>
+<!--                    <exclude>ch.qos.logback:logback-classic</exclude>-->
                     <!-- NOTE: We're banning any HBase deps versions other than the approved ${hbase.version},
                                which is aimed at preventing the classpath collisions w/ transitive deps usually) -->
                     <exclude>org.apache.hbase:hbase-common:*</exclude>
@@ -389,7 +389,7 @@
                     <exclude>org.apache.hbase:hbase-server:*</exclude>
                   </excludes>
                   <includes>
-                    <include>org.slf4j:slf4j-simple:*:*:test</include>
+<!--                    <include>org.slf4j:slf4j-simple:*:*:test</include>-->
                     <include>org.apache.hbase:hbase-common:${hbase.version}</include>
                     <include>org.apache.hbase:hbase-client:${hbase.version}</include>
                     <include>org.apache.hbase:hbase-server:${hbase.version}</include>
@@ -1864,9 +1864,9 @@
                 <configuration>
                   <rules>
                     <bannedDependencies>
-                      <excludes combine.children="append">
-                        <exclude>*:*_2.11</exclude>
-                      </excludes>
+<!--                      <excludes combine.children="append">-->
+<!--                        <exclude>*:*_2.11</exclude>-->
+<!--                      </excludes>-->
                     </bannedDependencies>
                   </rules>
                 </configuration>
