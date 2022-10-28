@@ -171,8 +171,11 @@ public class StreamWriteFunctionWrapper<I> implements TestFunctionWrapper<I> {
     } else {
       bucketAssignerFunction.processElement(hoodieRecord, null, collector);
       bucketAssignFunctionContext.setCurrentKey(hoodieRecord.getRecordKey());
-      writeFunction.processElement(collector.getVal(), null, null);
+      if (writeFunction.extractTimeStampEnable()) {
+        writeFunction.extractTimestamp(collector.getVal());
+      }
     }
+    writeFunction.processElement(collector.getVal(), null, null);
   }
 
   public WriteMetadataEvent[] getEventBuffer() {
