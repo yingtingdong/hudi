@@ -60,6 +60,8 @@ public final class FlinkHoodieIndexFactory {
         return new HoodieGlobalSimpleIndex(config, Option.empty());
       case BUCKET:
         return new HoodieSimpleBucketIndex(config);
+      case NON_INDEX:
+        return new FlinkHoodieNonIndex(config);
       default:
         throw new HoodieIndexException("Unsupported index type " + config.getIndexType());
     }
