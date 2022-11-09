@@ -83,6 +83,7 @@ object HoodieProcedures {
       ,(BackupInvalidParquetProcedure.NAME, BackupInvalidParquetProcedure.builder)
       ,(CopyToTempView.NAME, CopyToTempView.builder)
       ,(ShowCommitExtraMetadataProcedure.NAME, ShowCommitExtraMetadataProcedure.builder)
+      ,(ShowTablePropertiesProcedure.NAME, ShowTablePropertiesProcedure.builder)
     )
   }
 }
