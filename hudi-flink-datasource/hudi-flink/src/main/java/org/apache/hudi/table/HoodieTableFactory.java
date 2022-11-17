@@ -196,6 +196,13 @@ public class HoodieTableFactory implements DynamicTableSourceFactory, DynamicTab
       conf.setString(FlinkOptions.KEYGEN_CLASS_NAME, EmptyAvroKeyGenerator.class.getName());
       conf.setString(FlinkOptions.OPERATION, WriteOperationType.INSERT.value());
       conf.setString(FlinkOptions.MERGE_TYPE, REALTIME_SKIP_MERGE);
+      TimestampBasedAvroKeyGenerator.TimestampType timestampType = TimestampBasedAvroKeyGenerator.TimestampType
+          .valueOf(conf.toMap().getOrDefault(KeyGeneratorOptions.Config.TIMESTAMP_TYPE_FIELD_PROP, TimestampBasedAvroKeyGenerator.TimestampType.NO_TIMESTAMP.name()));
+      if (timestampType == TimestampBasedAvroKeyGenerator.TimestampType.NO_TIMESTAMP) {
+        conf.setString(KeyGeneratorOptions.Config.TIMESTAMP_TYPE_FIELD_PROP, TimestampBasedAvroKeyGenerator.TimestampType.NO_TIMESTAMP.name());
+        // the option is actually useless, it only works for validation
+        conf.setString(KeyGeneratorOptions.Config.TIMESTAMP_OUTPUT_DATE_FORMAT_PROP, FlinkOptions.PARTITION_FORMAT_HOUR);
+      }
     }
   }
 

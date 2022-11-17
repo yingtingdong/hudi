@@ -18,6 +18,7 @@
 
 package org.apache.hudi.keygen;
 
+import java.io.IOException;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hudi.common.config.TypedProperties;
 import org.apache.hudi.keygen.constant.KeyGeneratorOptions;
@@ -38,7 +39,7 @@ public class EmptyKeyGenerator extends BuiltinKeyGenerator {
 
   private final EmptyAvroKeyGenerator emptyAvroKeyGenerator;
 
-  public EmptyKeyGenerator(TypedProperties config) {
+  public EmptyKeyGenerator(TypedProperties config) throws IOException {
     super(config);
     this.emptyAvroKeyGenerator = new EmptyAvroKeyGenerator(config);
     this.recordKeyFields = emptyAvroKeyGenerator.getRecordKeyFieldNames();

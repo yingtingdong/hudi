@@ -18,6 +18,7 @@
 
 package org.apache.hudi.keygen;
 
+import java.io.IOException;
 import org.apache.avro.generic.GenericRecord;
 
 import org.apache.hudi.common.model.HoodieKey;
@@ -36,13 +37,13 @@ import java.util.stream.Collectors;
 /**
  * Avro key generator for empty record key Hudi tables.
  */
-public class EmptyAvroKeyGenerator extends BaseKeyGenerator {
+public class EmptyAvroKeyGenerator extends TimestampBasedAvroKeyGenerator {
 
   private static final Logger LOG = LogManager.getLogger(EmptyAvroKeyGenerator.class);
   public static final String EMPTY_RECORD_KEY = HoodieKey.EMPTY_RECORD_KEY;
   private static final List<String> EMPTY_RECORD_KEY_FIELD_LIST = Collections.emptyList();
 
-  public EmptyAvroKeyGenerator(TypedProperties props) {
+  public EmptyAvroKeyGenerator(TypedProperties props) throws IOException {
     super(props);
     if (config.containsKey(KeyGeneratorOptions.RECORDKEY_FIELD_NAME.key())) {
       LOG.warn(KeyGeneratorOptions.RECORDKEY_FIELD_NAME.key() + " will be ignored while using "
@@ -60,6 +61,10 @@ public class EmptyAvroKeyGenerator extends BaseKeyGenerator {
 
   @Override
   public String getPartitionPath(GenericRecord record) {
-    return KeyGenUtils.getRecordPartitionPath(record, getPartitionPathFields(), hiveStylePartitioning, encodePartitionPath, isConsistentLogicalTimestampEnabled());
+    if (this.timestampType == TimestampType.NO_TIMESTAMP) {
+      return KeyGenUtils.getRecordPartitionPath(record, getPartitionPathFields(), hiveStylePartitioning, encodePartitionPath, isConsistentLogicalTimestampEnabled());
+    } else {
+      return super.getPartitionPath(record);
+    }
   }
 }

@@ -49,11 +49,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class TimestampBasedAvroKeyGenerator extends SimpleAvroKeyGenerator {
   public enum TimestampType implements Serializable {
-    UNIX_TIMESTAMP, DATE_STRING, MIXED, EPOCHMILLISECONDS, SCALAR
+    UNIX_TIMESTAMP, DATE_STRING, MIXED, EPOCHMILLISECONDS, SCALAR, NO_TIMESTAMP
   }
 
   private final TimeUnit timeUnit;
-  private final TimestampType timestampType;
+  protected final TimestampType timestampType;
   private final String outputDateFormat;
   private transient Option<DateTimeFormatter> inputFormatter;
   private transient DateTimeFormatter partitionFormatter;
