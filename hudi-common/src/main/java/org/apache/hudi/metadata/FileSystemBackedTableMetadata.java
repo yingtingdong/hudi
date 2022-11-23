@@ -18,6 +18,7 @@
 
 package org.apache.hudi.metadata;
 
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hudi.avro.model.HoodieMetadataColumnStats;
 import org.apache.hudi.common.bloom.BloomFilter;
 import org.apache.hudi.common.config.SerializableConfiguration;
@@ -96,6 +97,7 @@ public class FileSystemBackedTableMetadata implements HoodieTableMetadata {
         // result below holds a list of pair. first entry in the pair optionally holds the deduced list of partitions.
         // and second entry holds optionally a directory path to be processed further.
         List<Pair<Option<String>, Option<Path>>> result = engineContext.map(dirToFileListing, fileStatus -> {
+          UserGroupInformation.setConfiguration(hadoopConf.get());
           FileSystem fileSystem = fileStatus.getPath().getFileSystem(hadoopConf.get());
           if (fileStatus.isDirectory()) {
             if (HoodiePartitionMetadata.hasPartitionMetadata(fileSystem, fileStatus.getPath())) {
