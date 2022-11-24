@@ -511,26 +511,25 @@ public class StreamWriteOperatorCoordinator
     }
     setMinEventTime();
     doCommit(instant, writeResults);
-    resetMinEventTime();
     return true;
   }
 
   public void setMinEventTime() {
     if (commitEventTimeEnable) {
-      LOG.info("[setMinEventTime] receive event time for current commit: {} ", Arrays.stream(eventBuffer).map(WriteMetadataEvent::getMaxEventTime).map(String::valueOf)
-          .collect(Collectors.joining(", ")));
-      this.minEventTime = Arrays.stream(eventBuffer)
+      List<Long> eventTimes = Arrays.stream(eventBuffer)
           .filter(Objects::nonNull)
-          .filter(maxEventTime -> maxEventTime.getMaxEventTime() > 0)
           .map(WriteMetadataEvent::getMaxEventTime)
-          .min(Comparator.naturalOrder())
-          .map(aLong -> Math.min(aLong, this.minEventTime)).orElse(Long.MAX_VALUE);
+          .filter(maxEventTime -> maxEventTime > 0)
+          .collect(Collectors.toList());
+
+      if (!eventTimes.isEmpty()) {
+        LOG.info("[setMinEventTime] receive event time for current commit: {} ",
+            eventTimes.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+        this.minEventTime = eventTimes.stream().min(Comparator.naturalOrder())
+            .map(aLong -> Math.min(aLong, this.minEventTime)).orElse(Long.MAX_VALUE);
+      }
       LOG.info("[setMinEventTime] minEventTime: {} ", this.minEventTime);
     }
-  }
-
-  public void resetMinEventTime() {
-    this.minEventTime = Long.MAX_VALUE;
   }
 
   /**
