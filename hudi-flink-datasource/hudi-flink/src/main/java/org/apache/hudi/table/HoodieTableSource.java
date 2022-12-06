@@ -115,8 +115,9 @@ public class HoodieTableSource implements
   private final transient HoodieTableMetaClient metaClient;
   private final long maxCompactionMemoryInBytes;
 
-  private final ResolvedSchema schema;
   private final RowType tableRowType;
+  private final String[] schemaFieldNames;
+  private final DataType[] schemaTypes;
   private final Path path;
   private final List<String> partitionKeys;
   private final String defaultPartName;
@@ -135,34 +136,43 @@ public class HoodieTableSource implements
       List<String> partitionKeys,
       String defaultPartName,
       Configuration conf) {
-    this(schema, path, partitionKeys, defaultPartName, conf, null, null, null, null);
+
+    this(schema.getColumnNames().toArray(new String[0]),
+        schema.getColumnDataTypes().toArray(new DataType[0]),
+        (RowType) schema.toPhysicalRowDataType().notNull().getLogicalType(),
+        path, partitionKeys, defaultPartName, conf, null, null, null, null, null);
   }
 
   public HoodieTableSource(
-      ResolvedSchema schema,
+      String[] schemaFieldNames,
+      DataType[] schemaTypes,
+      RowType rowType,
       Path path,
       List<String> partitionKeys,
       String defaultPartName,
       Configuration conf,
+      @Nullable FileIndex fileIndex,
       @Nullable List<Map<String, String>> requiredPartitions,
       @Nullable int[] requiredPos,
       @Nullable Long limit,
-      @Nullable List<ResolvedExpression> filters) {
-    this.schema = schema;
-    this.tableRowType = (RowType) schema.toPhysicalRowDataType().notNull().getLogicalType();
+      @Nullable HoodieTableMetaClient metaClient) {
+    this.schemaFieldNames = schemaFieldNames;
+    this.schemaTypes = schemaTypes;
+    this.tableRowType = rowType;
     this.path = path;
     this.partitionKeys = partitionKeys;
     this.defaultPartName = defaultPartName;
     this.conf = conf;
+    this.fileIndex = fileIndex == null
+        ? FileIndex.instance(this.path, this.conf, this.tableRowType)
+        : fileIndex;
     this.requiredPartitions = requiredPartitions;
     this.requiredPos = requiredPos == null
         ? IntStream.range(0, this.tableRowType.getFieldCount()).toArray()
         : requiredPos;
     this.limit = limit == null ? NO_LIMIT_CONSTANT : limit;
-    this.filters = filters == null ? Collections.emptyList() : filters;
     this.hadoopConf = HadoopConfigurations.getHadoopConf(conf);
-    this.metaClient = StreamerUtil.metaClientForReader(conf, hadoopConf);
-    this.fileIndex = FileIndex.instance(this.path, this.conf, this.tableRowType);
+    this.metaClient = metaClient == null ? StreamerUtil.metaClientForReader(conf, hadoopConf) : metaClient;
     this.maxCompactionMemoryInBytes = StreamerUtil.getMaxCompactionMemoryInBytes(conf);
   }
 
@@ -210,8 +220,8 @@ public class HoodieTableSource implements
 
   @Override
   public DynamicTableSource copy() {
-    return new HoodieTableSource(schema, path, partitionKeys, defaultPartName,
-        conf, requiredPartitions, requiredPos, limit, filters);
+    return new HoodieTableSource(schemaFieldNames, schemaTypes, tableRowType, path, partitionKeys, defaultPartName,
+        conf, fileIndex, requiredPartitions, requiredPos, limit, metaClient);
   }
 
   @Override
@@ -256,8 +266,8 @@ public class HoodieTableSource implements
   }
 
   private DataType getProducedDataType() {
-    String[] schemaFieldNames = this.schema.getColumnNames().toArray(new String[0]);
-    DataType[] schemaTypes = this.schema.getColumnDataTypes().toArray(new DataType[0]);
+    String[] schemaFieldNames = this.schemaFieldNames;
+    DataType[] schemaTypes = this.schemaTypes;
 
     return DataTypes.ROW(Arrays.stream(this.requiredPos)
             .mapToObj(i -> DataTypes.FIELD(schemaFieldNames[i], schemaTypes[i]))
@@ -266,7 +276,7 @@ public class HoodieTableSource implements
   }
 
   private String getSourceOperatorName(String operatorName) {
-    String[] schemaFieldNames = this.schema.getColumnNames().toArray(new String[0]);
+    String[] schemaFieldNames = this.schemaFieldNames;
     List<String> fields = Arrays.stream(this.requiredPos)
         .mapToObj(i -> schemaFieldNames[i])
         .collect(Collectors.toList());
@@ -450,8 +460,8 @@ public class HoodieTableSource implements
 
     return new CopyOnWriteInputFormat(
         FilePathUtils.toFlinkPaths(paths),
-        this.schema.getColumnNames().toArray(new String[0]),
-        this.schema.getColumnDataTypes().toArray(new DataType[0]),
+        this.schemaFieldNames,
+        this.schemaTypes,
         this.requiredPos,
         this.conf.getString(FlinkOptions.PARTITION_DEFAULT_NAME),
         this.limit == NO_LIMIT_CONSTANT ? Long.MAX_VALUE : this.limit, // ParquetInputFormat always uses the limit value
