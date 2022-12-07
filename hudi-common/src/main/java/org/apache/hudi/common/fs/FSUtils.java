@@ -18,6 +18,7 @@
 
 package org.apache.hudi.common.fs;
 
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hudi.common.config.HoodieMetadataConfig;
 import org.apache.hudi.common.config.SerializableConfiguration;
 import org.apache.hudi.common.engine.HoodieEngineContext;
@@ -107,6 +108,7 @@ public class FSUtils {
     FileSystem fs;
     prepareHadoopConf(conf);
     try {
+      UserGroupInformation.setConfiguration(conf);
       fs = path.getFileSystem(conf);
     } catch (IOException e) {
       throw new HoodieIOException("Failed to get instance of " + FileSystem.class.getName(), e);

@@ -511,6 +511,7 @@ public class StreamWriteOperatorCoordinator
     }
     setMinEventTime();
     doCommit(instant, writeResults);
+    resetMinEventTime();
     return true;
   }
 
@@ -530,6 +531,10 @@ public class StreamWriteOperatorCoordinator
       }
       LOG.info("[setMinEventTime] minEventTime: {} ", this.minEventTime);
     }
+  }
+
+  public void resetMinEventTime() {
+    this.minEventTime = Long.MAX_VALUE;
   }
 
   /**
