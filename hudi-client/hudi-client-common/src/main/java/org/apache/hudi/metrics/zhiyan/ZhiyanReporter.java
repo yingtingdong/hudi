@@ -81,7 +81,6 @@ public class ZhiyanReporter extends ScheduledReporter {
 
     String payload = builder.build();
 
-    LOG.info("Payload is:" + payload);
     try {
       client.post(payload);
     } catch (Exception e) {
