@@ -46,7 +46,6 @@ import org.apache.hudi.common.table.timeline.versioning.TimelineLayoutVersion;
 import org.apache.hudi.common.table.view.FileSystemViewStorageConfig;
 import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.ReflectionUtils;
-import org.apache.hudi.common.util.StringUtils;
 import org.apache.hudi.common.util.ValidationUtils;
 import org.apache.hudi.config.metrics.HoodieMetricsCloudWatchConfig;
 import org.apache.hudi.config.metrics.HoodieMetricsConfig;
@@ -92,6 +91,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.apache.hudi.common.util.StringUtils.isNullOrEmpty;
 import static org.apache.hudi.config.HoodieCleanConfig.CLEANER_POLICY;
 
 /**
@@ -1710,7 +1710,7 @@ public class HoodieWriteConfig extends HoodieConfig {
 
   public CompressionCodecName getParquetCompressionCodec() {
     String codecName = getString(HoodieStorageConfig.PARQUET_COMPRESSION_CODEC_NAME);
-    return CompressionCodecName.fromConf(StringUtils.isNullOrEmpty(codecName) ? null : codecName);
+    return CompressionCodecName.fromConf(isNullOrEmpty(codecName) ? null : codecName);
   }
 
   public boolean parquetDictionaryEnabled() {
@@ -2308,7 +2308,7 @@ public class HoodieWriteConfig extends HoodieConfig {
     }
 
     public Builder withDatabaseName(String dbName) {
-      writeConfig.setValue(DATABASE_NAME, dbName);
+      writeConfig.setValue(DATABASE_NAME, isNullOrEmpty(dbName) ? "default" : dbName);
       return this;
     }
 
