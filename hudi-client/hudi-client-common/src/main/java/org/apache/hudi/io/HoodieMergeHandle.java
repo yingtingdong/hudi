@@ -18,6 +18,10 @@
 
 package org.apache.hudi.io;
 
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.IndexedRecord;
+import org.apache.hadoop.fs.Path;
 import org.apache.hudi.client.WriteStatus;
 import org.apache.hudi.common.engine.TaskContextSupplier;
 import org.apache.hudi.common.fs.FSUtils;
@@ -34,7 +38,6 @@ import org.apache.hudi.common.model.IOType;
 import org.apache.hudi.common.util.DefaultSizeEstimator;
 import org.apache.hudi.common.util.HoodieRecordSizeEstimator;
 import org.apache.hudi.common.util.Option;
-import org.apache.hudi.common.util.ParquetUtils;
 import org.apache.hudi.common.util.ValidationUtils;
 import org.apache.hudi.common.util.collection.ExternalSpillableMap;
 import org.apache.hudi.config.HoodieWriteConfig;
@@ -47,26 +50,18 @@ import org.apache.hudi.io.storage.HoodieFileWriter;
 import org.apache.hudi.keygen.BaseKeyGenerator;
 import org.apache.hudi.keygen.KeyGenUtils;
 import org.apache.hudi.table.HoodieTable;
-
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.generic.IndexedRecord;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import javax.annotation.concurrent.NotThreadSafe;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
-
-import static org.apache.hudi.common.model.HoodieFileFormat.PARQUET;
 
 @SuppressWarnings("Duplicates")
 /**
@@ -450,12 +445,7 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
       return;
     }
 
-    // Fast verify the integrity of the parquet file.
-    // only check the readable of parquet metadata.
-    final String extension = FSUtils.getFileExtension(newFilePath.toString());
-    if (PARQUET.getFileExtension().equals(extension)) {
-      new ParquetUtils().readMetadata(hoodieTable.getHadoopConf(), newFilePath);
-    }
+    IOUtils.checkParquetFileVaid(hoodieTable.getHadoopConf(), newFilePath);
 
     long oldNumWrites = 0;
     try {
