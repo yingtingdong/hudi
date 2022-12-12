@@ -1426,7 +1426,7 @@ possible configurations would overwhelm and obscure the important.
   </property>
   <property skipInDoc="true">
     <name>hbase.defaults.for.version</name>
-    <value>2.4.9</value>
+    <value>2.4.9-tq-0.01</value>
     <description>This defaults file was compiled for version ${project.version}. This variable is used
       to make sure that a user doesn't have an old version of hbase-default.xml on the
       classpath.
@@ -1434,7 +1434,7 @@ possible configurations would overwhelm and obscure the important.
   </property>
   <property>
     <name>hbase.defaults.for.version.skip</name>
-    <value>true</value>
+    <value>false</value>
     <description>Set to true to skip the 'hbase.defaults.for.version' check.
       Setting this to true can be useful in contexts other than
       the other side of a maven generation; i.e. running in an
