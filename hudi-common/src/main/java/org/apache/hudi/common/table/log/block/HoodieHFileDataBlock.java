@@ -36,12 +36,12 @@ import org.apache.hudi.common.fs.inline.InLineFileSystem;
 import org.apache.hudi.common.util.ClosableIterator;
 import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.StringUtils;
-import org.apache.hudi.common.util.ValidationUtils;
 import org.apache.hudi.exception.HoodieIOException;
 import org.apache.hudi.io.storage.HoodieHBaseKVComparator;
 import org.apache.hudi.io.storage.HoodieHFileReader;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.mortbay.log.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -130,8 +130,9 @@ public class HoodieHFileDataBlock extends HoodieDataBlock {
       }
 
       final byte[] recordBytes = serializeRecord(record);
-      ValidationUtils.checkState(!sortedRecordsMap.containsKey(recordKey),
-          "Writing multiple records with same key not supported for " + this.getClass().getName());
+      if (sortedRecordsMap.containsKey(recordKey)) {
+        Log.warn("Writing multiple records with same key not supported for " + this.getClass().getName());
+      }
       sortedRecordsMap.put(recordKey, recordBytes);
     }
 
