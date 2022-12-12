@@ -597,7 +597,12 @@ public class HoodieActiveTimeline extends HoodieDefaultTimeline {
         if (allowRedundantTransitions) {
           FileIOUtils.createFileInPath(metaClient.getFs(), getInstantFileNamePath(toInstant.getFileName()), data);
         } else {
-          metaClient.getFs().createImmutableFileInPath(getInstantFileNamePath(toInstant.getFileName()), data);
+          if (metaClient.getMetastoreConfig().enableMetastore()
+              && metaClient.getFs().exists(getInstantFileNamePath(toInstant.getFileName()))) {
+            LOG.info(getInstantFileNamePath(toInstant.getFileName()) + " is exists!!! No need to create.");
+          } else {
+            metaClient.getFs().createImmutableFileInPath(getInstantFileNamePath(toInstant.getFileName()), data);
+          }
         }
         LOG.info("Create new file for toInstant ?" + getInstantFileNamePath(toInstant.getFileName()));
       }
