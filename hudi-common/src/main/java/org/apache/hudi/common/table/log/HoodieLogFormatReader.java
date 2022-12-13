@@ -67,8 +67,12 @@ public class HoodieLogFormatReader implements HoodieLogFormat.Reader {
     this.internalSchema = internalSchema == null ? InternalSchema.getEmptyInternalSchema() : internalSchema;
     if (logFiles.size() > 0) {
       HoodieLogFile nextLogFile = logFiles.remove(0);
-      this.currentReader = new HoodieLogFileReader(fs, nextLogFile, readerSchema, bufferSize, readBlocksLazily, false,
-          enableRecordLookups, recordKeyField, internalSchema);
+      if (fs.exists(nextLogFile.getPath())) {
+        this.currentReader = new HoodieLogFileReader(fs, nextLogFile, readerSchema, bufferSize, readBlocksLazily, false,
+            enableRecordLookups, recordKeyField, internalSchema);
+      } else {
+        LOG.warn("File does not exist: " + nextLogFile.getPath());
+      }
     }
   }
 
