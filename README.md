@@ -62,7 +62,7 @@ Prerequisites for building Apache Hudi:
 ```
 # Checkout code and build
 git clone https://github.com/apache/hudi.git && cd hudi
-mvn clean package -DskipTests
+mvn clean package -DskipTests -Dcheckstyle.skip=true -Dscalastyle.skip=true
 
 # Start command
 spark-2.4.4-bin-hadoop2.7/bin/spark-shell \
@@ -97,13 +97,13 @@ Refer to the table below for building with different Spark and Scala versions.
 For example,
 ```
 # Build against Spark 3.2.x
-mvn clean package -DskipTests -Dspark3.2 -Dscala-2.12
+mvn clean package -DskipTests -Dspark3.2 -Dscala-2.12 -Dcheckstyle.skip=true -Dscalastyle.skip=true
 
 # Build against Spark 3.1.x
-mvn clean package -DskipTests -Dspark3.1 -Dscala-2.12
+mvn clean package -DskipTests -Dspark3.1 -Dscala-2.12 -Dcheckstyle.skip=true -Dscalastyle.skip=true
 
 # Build against Spark 2.4.4 and Scala 2.12
-mvn clean package -DskipTests -Dspark2.4 -Dscala-2.12
+mvn clean package -DskipTests -Dspark2.4 -Dscala-2.12 -Dcheckstyle.skip=true -Dscalastyle.skip=true
 ```
 
 #### What about "spark-avro" module?
