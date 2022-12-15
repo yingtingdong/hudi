@@ -40,6 +40,7 @@ echo "Preparing source for $tagrc"
 # change version
 echo "Change version for ${version}"
 mvn versions:set -DnewVersion=${version} -DgenerateBackupPom=false -s dev/settings.xml -U
+mvn -N versions:update-child-modules
 mvn versions:commit -s dev/settings.xml -U
 
 # create version.txt for this release

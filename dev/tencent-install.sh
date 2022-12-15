@@ -40,6 +40,7 @@ echo "Preparing source for $tagrc"
 # change version
 echo "Change version for ${version}"
 mvn versions:set -DnewVersion=${version} -DgenerateBackupPom=false -s dev/settings.xml -U
+mvn -N versions:update-child-modules
 mvn versions:commit -s dev/settings.xml -U
 
 function git_push() {
@@ -118,9 +119,9 @@ function deploy_spark() {
   FLINK_VERSION=$3
 
   if [ ${release_repo} = "Y" ]; then
-    COMMON_OPTIONS="-Dscala-${SCALA_VERSION} -Dspark${SPARK_VERSION} -Dflink${FLINK_VERSION} -DskipTests -s dev/settings.xml -DretryFailedDeploymentCount=30 -T 2.5C"
+    COMMON_OPTIONS="-Dscala-${SCALA_VERSION} -Dspark${SPARK_VERSION} -Dflink${FLINK_VERSION} -DskipTests -Dcheckstyle.skip=true -Dscalastyle.skip=true -s dev/settings.xml -DretryFailedDeploymentCount=30 -T 2.5C"
   else
-    COMMON_OPTIONS="-Dscala-${SCALA_VERSION} -Dspark${SPARK_VERSION} -Dflink${FLINK_VERSION} -DskipTests -s dev/settings.xml -DretryFailedDeploymentCount=30 -T 2.5C"
+    COMMON_OPTIONS="-Dscala-${SCALA_VERSION} -Dspark${SPARK_VERSION} -Dflink${FLINK_VERSION} -DskipTests -Dcheckstyle.skip=true -Dscalastyle.skip=true -s dev/settings.xml -DretryFailedDeploymentCount=30 -T 2.5C"
   fi
 
   #  INSTALL_OPTIONS="-U -Drat.skip=true -Djacoco.skip=true -Dscala-${SCALA_VERSION} -Dspark${SPARK_VERSION} -DskipTests -s dev/settings.xml -T 2.5C"
