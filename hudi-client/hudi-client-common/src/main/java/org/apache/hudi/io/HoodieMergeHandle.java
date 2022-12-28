@@ -445,7 +445,13 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
       return;
     }
 
-    IOUtils.checkParquetFileVaid(hoodieTable.getHadoopConf(), newFilePath);
+    try {
+      if (fs.exists(newFilePath)) {
+        IOUtils.checkParquetFileVaid(hoodieTable.getHadoopConf(), newFilePath);
+      }
+    } catch (IOException e) {
+      throw new HoodieUpsertException("Failed to check for merge data validation", e);
+    }
 
     long oldNumWrites = 0;
     try {

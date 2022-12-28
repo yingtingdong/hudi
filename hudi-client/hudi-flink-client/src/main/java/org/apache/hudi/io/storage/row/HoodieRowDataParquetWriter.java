@@ -75,6 +75,8 @@ public class HoodieRowDataParquetWriter extends ParquetWriter<RowData>
   @Override
   public void close() throws IOException {
     super.close();
-    IOUtils.checkParquetFileVaid(fs.getConf(), file);
+    if (fs.exists(file)) {
+      IOUtils.checkParquetFileVaid(fs.getConf(), file);
+    }
   }
 }
