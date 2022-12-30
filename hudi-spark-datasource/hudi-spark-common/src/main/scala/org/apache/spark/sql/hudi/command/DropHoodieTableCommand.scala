@@ -70,16 +70,17 @@ case class DropHoodieTableCommand(
 
     val basePath = hoodieCatalogTable.tableLocation
     val catalog = sparkSession.sessionState.catalog
+    val hoodieTableExists = hoodieCatalogTable.hoodieTableExists
+    val tableType = hoodieCatalogTable.tableType
 
     // Drop table in the catalog
-    if (hoodieCatalogTable.hoodieTableExists &&
-        HoodieTableType.MERGE_ON_READ == hoodieCatalogTable.tableType && purge) {
+    if (hoodieTableExists && HoodieTableType.MERGE_ON_READ == tableType && purge) {
       val (rtTableOpt, roTableOpt) = getTableRTAndRO(catalog, hoodieCatalogTable)
-      rtTableOpt.foreach(table => catalog.dropTable(table.identifier, true, false))
-      roTableOpt.foreach(table => catalog.dropTable(table.identifier, true, false))
-      catalog.dropTable(table.identifier.copy(table = hoodieCatalogTable.tableName), ifExists, purge)
+      rtTableOpt.foreach(table => catalog.dropTable(table.identifier, ignoreIfNotExists = true, purge = false))
+      roTableOpt.foreach(table => catalog.dropTable(table.identifier, ignoreIfNotExists = true, purge = false))
+      catalog.dropTable(table.identifier.copy(table = hoodieCatalogTable.tableName), ignoreIfNotExists = true, purge = purge)
     } else {
-      catalog.dropTable(table.identifier, ifExists, purge)
+      catalog.dropTable(table.identifier, ignoreIfNotExists = true, purge = purge)
     }
 
     // Recursively delete table directories
