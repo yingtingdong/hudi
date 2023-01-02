@@ -743,6 +743,14 @@ public class HoodieTableMetaClient implements Serializable {
     private String metadataPartitions;
     private String inflightMetadataPartitions;
 
+    private Boolean allowOperationMetadataField;
+
+    private String indexType;
+
+    private String indexKeys;
+
+    private Integer bucketIndexNumBuckets;
+
     /**
      * Persist the configs that is written at the first time, and should not be changed.
      * Like KeyGenerator's configs.
@@ -876,6 +884,26 @@ public class HoodieTableMetaClient implements Serializable {
       return this;
     }
 
+    public PropertyBuilder setAllowOperationMetadataField(boolean allowOperationMetadataField) {
+      this.allowOperationMetadataField = allowOperationMetadataField;
+      return this;
+    }
+
+    public PropertyBuilder setIndexType(String indexType) {
+      this.indexType = indexType;
+      return this;
+    }
+
+    public PropertyBuilder setIndexKeys(String indexKeys) {
+      this.indexKeys = indexKeys;
+      return this;
+    }
+
+    public PropertyBuilder setIndexNumBuckets(Integer bucketIndexNumBuckets) {
+      this.bucketIndexNumBuckets = bucketIndexNumBuckets;
+      return this;
+    }
+
     private void set(String key, Object value) {
       if (HoodieTableConfig.PERSISTED_CONFIG_LIST.contains(key)) {
         this.others.put(key, value);
@@ -982,6 +1010,20 @@ public class HoodieTableMetaClient implements Serializable {
       if (hoodieConfig.contains(HoodieTableConfig.TABLE_METADATA_PARTITIONS_INFLIGHT)) {
         setInflightMetadataPartitions(hoodieConfig.getString(HoodieTableConfig.TABLE_METADATA_PARTITIONS_INFLIGHT));
       }
+      if (hoodieConfig.contains(HoodieTableConfig.ALLOW_OPERATION_METADATA_FIELD)) {
+        setAllowOperationMetadataField(
+            hoodieConfig.getBoolean(HoodieTableConfig.ALLOW_OPERATION_METADATA_FIELD));
+      }
+      // At present, the main consideration is bucket index
+      if (hoodieConfig.contains(HoodieTableConfig.INDEX_TYPE)) {
+        setIndexType(hoodieConfig.getString(HoodieTableConfig.INDEX_TYPE));
+      }
+      if (hoodieConfig.contains(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD)) {
+        setIndexKeys(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD));
+      }
+      if (hoodieConfig.contains(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS)) {
+        setIndexNumBuckets(hoodieConfig.getInt(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS));
+      }
       return this;
     }
 
@@ -1071,6 +1113,19 @@ public class HoodieTableMetaClient implements Serializable {
       }
       if (null != inflightMetadataPartitions) {
         tableConfig.setValue(HoodieTableConfig.TABLE_METADATA_PARTITIONS_INFLIGHT, inflightMetadataPartitions);
+      }
+      if (null != allowOperationMetadataField) {
+        tableConfig.setValue(
+            HoodieTableConfig.ALLOW_OPERATION_METADATA_FIELD, Boolean.toString(allowOperationMetadataField));
+      }
+      if (null != indexType) {
+        tableConfig.setValue(HoodieTableConfig.INDEX_TYPE, indexType);
+      }
+      if (null != indexKeys) {
+        tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD, indexKeys);
+      }
+      if (null != bucketIndexNumBuckets) {
+        tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS, Integer.toString(bucketIndexNumBuckets));
       }
       return tableConfig.getProps();
     }
