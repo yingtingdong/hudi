@@ -30,6 +30,7 @@ import org.apache.hudi.common.model.HoodieRecord;
 import org.apache.hudi.common.model.HoodieRecordPayload;
 import org.apache.hudi.common.util.CollectionUtils;
 import org.apache.hudi.common.util.DefaultSizeEstimator;
+import org.apache.hudi.common.util.FileIOUtils;
 import org.apache.hudi.common.util.HoodieRecordSizeEstimator;
 import org.apache.hudi.common.util.HoodieTimer;
 import org.apache.hudi.common.util.Option;
@@ -90,6 +91,8 @@ public class HoodieMergedLogRecordScanner extends AbstractHoodieLogRecordReader
         instantRange, withOperationField,
         forceFullScan, partitionName, internalSchema);
     try {
+      String[] localDirs = FileIOUtils.getConfiguredLocalDirs();
+      spillableMapBasePath = localDirs.length > 0 ? localDirs[0] : spillableMapBasePath;
       // Store merged records for all versions for this log file, set the in-memory footprint to maxInMemoryMapSize
       this.records = new ExternalSpillableMap<>(maxMemorySizeInBytes, spillableMapBasePath, new DefaultSizeEstimator(),
           new HoodieRecordSizeEstimator(readerSchema), diskMapType, isBitCaskDiskMapCompressionEnabled);

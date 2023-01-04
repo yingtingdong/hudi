@@ -36,6 +36,7 @@ import org.apache.hudi.common.model.HoodieWriteStat;
 import org.apache.hudi.common.model.HoodieWriteStat.RuntimeStats;
 import org.apache.hudi.common.model.IOType;
 import org.apache.hudi.common.util.DefaultSizeEstimator;
+import org.apache.hudi.common.util.FileIOUtils;
 import org.apache.hudi.common.util.HoodieRecordSizeEstimator;
 import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.ValidationUtils;
@@ -226,7 +227,9 @@ public class HoodieMergeHandle<T extends HoodieRecordPayload, I, K, O> extends H
       // Load the new records in a map
       long memoryForMerge = IOUtils.getMaxMemoryPerPartitionMerge(taskContextSupplier, config);
       LOG.info("MaxMemoryPerPartitionMerge => " + memoryForMerge);
-      this.keyToNewRecords = new ExternalSpillableMap<>(memoryForMerge, config.getSpillableMapBasePath(),
+      String[] localDirs = FileIOUtils.getConfiguredLocalDirs();
+      String spillableMapBasePath = localDirs.length > 0 ? localDirs[0] : config.getSpillableMapBasePath();
+      this.keyToNewRecords = new ExternalSpillableMap<>(memoryForMerge, spillableMapBasePath,
           new DefaultSizeEstimator(), new HoodieRecordSizeEstimator(tableSchema),
           config.getCommonConfig().getSpillableDiskMapType(),
           config.getCommonConfig().isBitCaskDiskMapCompressionEnabled());
