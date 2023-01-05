@@ -34,8 +34,10 @@ import org.apache.hudi.configuration.OptionsResolver;
 import org.apache.hudi.hadoop.utils.HoodieInputFormatUtils;
 import org.apache.hudi.sink.partitioner.profile.WriteProfiles;
 import org.apache.hudi.table.format.mor.MergeOnReadInputSplit;
+import org.apache.hudi.util.ClusteringUtil;
 import org.apache.hudi.util.StreamerUtil;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.table.types.logical.RowType;
@@ -89,6 +91,8 @@ public class IncrementalInputSplits implements Serializable {
   private final Set<String> requiredPartitions;
   // skip compaction
   private final boolean skipCompaction;
+  // skip clustering
+  private final boolean skipClustering;
 
   private IncrementalInputSplits(
       Configuration conf,
@@ -96,13 +100,15 @@ public class IncrementalInputSplits implements Serializable {
       RowType rowType,
       long maxCompactionMemoryInBytes,
       @Nullable Set<String> requiredPartitions,
-      boolean skipCompaction) {
+      boolean skipCompaction,
+      boolean skipClustering) {
     this.conf = conf;
     this.path = path;
     this.rowType = rowType;
     this.maxCompactionMemoryInBytes = maxCompactionMemoryInBytes;
     this.requiredPartitions = requiredPartitions;
     this.skipCompaction = skipCompaction;
+    this.skipClustering = skipClustering;
   }
 
   /**
@@ -397,6 +403,17 @@ public class IncrementalInputSplits implements Serializable {
     return Collections.emptyList();
   }
 
+  private HoodieTimeline getReadTimeline(HoodieTableMetaClient metaClient) {
+    HoodieTimeline timeline = metaClient.getCommitsAndCompactionTimeline().filterCompletedAndCompactionInstants();
+    return filterInstantsByCondition(timeline);
+  }
+
+  private HoodieTimeline getArchivedReadTimeline(HoodieTableMetaClient metaClient, String startInstant) {
+    HoodieArchivedTimeline archivedTimeline = metaClient.getArchivedTimeline(startInstant, false);
+    HoodieTimeline archivedCompleteTimeline = archivedTimeline.getCommitsTimeline().filterCompletedInstants();
+    return filterInstantsByCondition(archivedCompleteTimeline);
+  }
+
   /**
    * Returns the instants with a given issuedInstant to start from.
    *
@@ -427,6 +444,25 @@ public class IncrementalInputSplits implements Serializable {
       instantStream = instantStream.filter(s -> HoodieTimeline.compareTimestamps(s.getTimestamp(), LESSER_THAN_OR_EQUALS, endCommit));
     }
     return maySkipCompaction(instantStream).collect(Collectors.toList());
+  }
+
+  /**
+   * Filters out the unnecessary instants by user specified condition.
+   *
+   * @param timeline The timeline
+   *
+   * @return the filtered timeline
+   */
+  private HoodieTimeline filterInstantsByCondition(HoodieTimeline timeline) {
+    final HoodieTimeline oriTimeline = timeline;
+    if (this.skipCompaction) {
+      // the compaction commit uses 'commit' as action which is tricky
+      timeline = timeline.filter(instant -> !instant.getAction().equals(HoodieTimeline.COMMIT_ACTION));
+    }
+    if (this.skipClustering) {
+      timeline = timeline.filter(instant -> !ClusteringUtil.isClusteringInstant(instant, oriTimeline));
+    }
+    return timeline;
   }
 
   private Stream<HoodieInstant> maySkipCompaction(Stream<HoodieInstant> instants) {
@@ -488,6 +524,8 @@ public class IncrementalInputSplits implements Serializable {
     private Set<String> requiredPartitions;
     // skip compaction
     private boolean skipCompaction = false;
+    // skip clustering
+    private boolean skipClustering = true;
 
     public Builder() {
     }
@@ -522,10 +560,15 @@ public class IncrementalInputSplits implements Serializable {
       return this;
     }
 
+    public Builder skipClustering(boolean skipClustering) {
+      this.skipClustering = skipClustering;
+      return this;
+    }
+
     public IncrementalInputSplits build() {
       return new IncrementalInputSplits(
           Objects.requireNonNull(this.conf), Objects.requireNonNull(this.path), Objects.requireNonNull(this.rowType),
-          this.maxCompactionMemoryInBytes, this.requiredPartitions, this.skipCompaction);
+          this.maxCompactionMemoryInBytes, this.requiredPartitions, this.skipCompaction, this.skipClustering);
     }
   }
 }
