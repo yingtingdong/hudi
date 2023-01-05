@@ -326,7 +326,7 @@ public class TestTimelineUtils extends HoodieCommonTestHarness {
   public void verifyTimeline(List<HoodieInstant> expectedInstants, HoodieTimeline timeline) {
     assertEquals(
         expectedInstants.stream().sorted().collect(Collectors.toList()),
-        timeline.getInstants().stream().sorted().collect(Collectors.toList())
+        timeline.getInstants().sorted().collect(Collectors.toList())
     );
   }
 
