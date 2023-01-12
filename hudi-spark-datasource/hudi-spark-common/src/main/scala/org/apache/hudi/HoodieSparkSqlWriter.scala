@@ -172,7 +172,8 @@ object HoodieSparkSqlWriter {
           .setShouldDropPartitionColumns(hoodieConfig.getBooleanOrDefault(HoodieTableConfig.DROP_PARTITION_COLUMNS))
           .setCommitTimezone(HoodieTimelineTimeZone.valueOf(hoodieConfig.getStringOrDefault(HoodieTableConfig.TIMELINE_TIMEZONE)))
           .setIndexType(hoodieConfig.getString(HoodieTableConfig.INDEX_TYPE))
-          .setIndexKeys(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD))
+          .setIndexBucketEngine(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE))
+          .setIndexHashField(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD))
           .setIndexNumBuckets(hoodieConfig.getInt(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS))
           .initTable(sparkContext.hadoopConfiguration, path)
         tableConfig = tableMetaClient.getTableConfig

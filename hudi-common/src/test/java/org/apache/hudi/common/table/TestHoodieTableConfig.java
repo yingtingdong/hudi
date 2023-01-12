@@ -140,6 +140,7 @@ public class TestHoodieTableConfig extends HoodieCommonTestHarness {
     Properties updatedProps = new Properties();
     updatedProps.setProperty(HoodieTableConfig.ALLOW_OPERATION_METADATA_FIELD.key(), "true");
     updatedProps.setProperty(HoodieTableConfig.INDEX_TYPE.key(), "BUCKET");
+    updatedProps.setProperty(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE.key(), "CONSISTENT_HASHING");
     updatedProps.setProperty(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD.key(), "uuid");
     updatedProps.setProperty(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS.key(), "8");
     HoodieTableConfig.update(fs, metaPath, updatedProps);
@@ -147,10 +148,11 @@ public class TestHoodieTableConfig extends HoodieCommonTestHarness {
     assertTrue(fs.exists(cfgPath));
     assertFalse(fs.exists(backupCfgPath));
     HoodieTableConfig config = new HoodieTableConfig(fs, metaPath.toString(), null);
-    assertEquals(10, config.getProps().size());
+    assertEquals(11, config.getProps().size());
     assertEquals(true, config.getAllowOperationMetadataField());
     assertEquals("BUCKET", config.getIndexType());
-    assertEquals("uuid", config.getIndexKeys());
+    assertEquals("CONSISTENT_HASHING", config.getIndexEngineType());
+    assertEquals("uuid", config.getIndexHashField());
     assertEquals(8, config.getIndexNumBuckets());
   }
 }

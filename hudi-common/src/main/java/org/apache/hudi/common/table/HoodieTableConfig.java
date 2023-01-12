@@ -218,9 +218,29 @@ public class HoodieTableConfig extends HoodieConfig {
       .noDefaultValue()
       .withDocumentation("Type of index to use. Default is SIMPLE on Spark engine, "
           + "and INMEMORY on Flink and Java engines. "
-          + "Possible options are [BLOOM | GLOBAL_BLOOM |SIMPLE | GLOBAL_SIMPLE | INMEMORY | HBASE | BUCKET]. "
+          + "Possible options are [BLOOM | GLOBAL_BLOOM | SIMPLE | GLOBAL_SIMPLE | INMEMORY | HBASE | BUCKET]. "
           + "Bloom filters removes the dependency on a external system "
           + "and is stored in the footer of the Parquet Data Files");
+
+  /**
+   * Bucket Index Engine Type: implementation of bucket index
+   *
+   * SIMPLE:
+   *  0. Check `HoodieSimpleBucketLayout` for its supported operations.
+   *  1. Bucket num is fixed and requires rewriting the partition if we want to change it.
+   *
+   * CONSISTENT_HASHING:
+   *  0. Check `HoodieConsistentBucketLayout` for its supported operations.
+   *  1. Bucket num will auto-adjust by running clustering (still in progress)
+   */
+  public static final ConfigProperty<String> BUCKET_INDEX_ENGINE_TYPE = ConfigProperty
+      .key("hoodie.index.bucket.engine")
+      .defaultValue("SIMPLE")
+      .sinceVersion("0.11.0")
+      .withDocumentation("Type of bucket index engine to use. Default is SIMPLE bucket index, with fixed number of bucket."
+          + "Possible options are [SIMPLE | CONSISTENT_HASHING]."
+          + "Consistent hashing supports dynamic resizing of the number of bucket, solving potential data skew and file size "
+          + "issues of the SIMPLE hashing engine. Consistent hashing only works with MOR tables, only use simple hashing on COW tables.");
 
   public static final ConfigProperty<Integer> BUCKET_INDEX_NUM_BUCKETS = ConfigProperty
       .key("hoodie.bucket.index.num.buckets")
@@ -679,7 +699,11 @@ public class HoodieTableConfig extends HoodieConfig {
     return getString(INDEX_TYPE);
   }
 
-  public String getIndexKeys() {
+  public String getIndexEngineType() {
+    return getString(BUCKET_INDEX_ENGINE_TYPE);
+  }
+
+  public String getIndexHashField() {
     return getString(BUCKET_INDEX_HASH_FIELD);
   }
 

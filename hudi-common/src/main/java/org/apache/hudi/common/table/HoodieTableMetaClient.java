@@ -776,7 +776,9 @@ public class HoodieTableMetaClient implements Serializable {
 
     private String indexType;
 
-    private String indexKeys;
+    private String indexBucketEngine;
+
+    private String indexHashField;
 
     private Integer bucketIndexNumBuckets;
 
@@ -923,8 +925,13 @@ public class HoodieTableMetaClient implements Serializable {
       return this;
     }
 
-    public PropertyBuilder setIndexKeys(String indexKeys) {
-      this.indexKeys = indexKeys;
+    public PropertyBuilder setIndexBucketEngine(String indexBucketEngine) {
+      this.indexBucketEngine = indexBucketEngine;
+      return this;
+    }
+
+    public PropertyBuilder setIndexHashField(String indexHashField) {
+      this.indexHashField = indexHashField;
       return this;
     }
 
@@ -1047,8 +1054,11 @@ public class HoodieTableMetaClient implements Serializable {
       if (hoodieConfig.contains(HoodieTableConfig.INDEX_TYPE)) {
         setIndexType(hoodieConfig.getString(HoodieTableConfig.INDEX_TYPE));
       }
+      if (hoodieConfig.contains(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE)) {
+        setIndexBucketEngine(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE));
+      }
       if (hoodieConfig.contains(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD)) {
-        setIndexKeys(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD));
+        setIndexHashField(hoodieConfig.getString(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD));
       }
       if (hoodieConfig.contains(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS)) {
         setIndexNumBuckets(hoodieConfig.getInt(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS));
@@ -1150,8 +1160,11 @@ public class HoodieTableMetaClient implements Serializable {
       if (null != indexType) {
         tableConfig.setValue(HoodieTableConfig.INDEX_TYPE, indexType);
       }
-      if (null != indexKeys) {
-        tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD, indexKeys);
+      if (null != indexBucketEngine) {
+        tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE, indexBucketEngine);
+      }
+      if (null != indexHashField) {
+        tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_HASH_FIELD, indexHashField);
       }
       if (null != bucketIndexNumBuckets) {
         tableConfig.setValue(HoodieTableConfig.BUCKET_INDEX_NUM_BUCKETS, Integer.toString(bucketIndexNumBuckets));

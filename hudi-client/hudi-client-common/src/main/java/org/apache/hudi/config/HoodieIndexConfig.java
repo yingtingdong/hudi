@@ -71,7 +71,7 @@ public class HoodieIndexConfig extends HoodieConfig {
           SIMPLE.name(), GLOBAL_SIMPLE.name(), BUCKET.name())
       .withDocumentation("Type of index to use. Default is SIMPLE on Spark engine, "
           + "and INMEMORY on Flink and Java engines. "
-          + "Possible options are [BLOOM | GLOBAL_BLOOM |SIMPLE | GLOBAL_SIMPLE | INMEMORY | HBASE | BUCKET]. "
+          + "Possible options are [BLOOM | GLOBAL_BLOOM | SIMPLE | GLOBAL_SIMPLE | INMEMORY | HBASE | BUCKET]. "
           + "Bloom filters removes the dependency on a external system "
           + "and is stored in the footer of the Parquet Data Files");
 
@@ -245,7 +245,7 @@ public class HoodieIndexConfig extends HoodieConfig {
    *  1. Bucket num will auto-adjust by running clustering (still in progress)
    */
   public static final ConfigProperty<String> BUCKET_INDEX_ENGINE_TYPE = ConfigProperty
-      .key("hoodie.index.bucket.engine")
+      .key(HoodieTableConfig.BUCKET_INDEX_ENGINE_TYPE.key())
       .defaultValue("SIMPLE")
       .sinceVersion("0.11.0")
       .withDocumentation("Type of bucket index engine to use. Default is SIMPLE bucket index, with fixed number of bucket."

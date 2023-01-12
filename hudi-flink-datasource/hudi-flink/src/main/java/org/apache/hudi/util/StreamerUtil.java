@@ -325,7 +325,8 @@ public class StreamerUtil {
           .setTimelineLayoutVersion(1)
           .setAllowOperationMetadataField(conf.getBoolean(FlinkOptions.CHANGELOG_ENABLED))
           .setIndexType(conf.getString(FlinkOptions.INDEX_TYPE))
-          .setIndexKeys(conf.getString(FlinkOptions.INDEX_KEY_FIELD))
+          .setIndexBucketEngine(conf.getString(FlinkOptions.BUCKET_INDEX_ENGINE_TYPE))
+          .setIndexHashField(conf.getString(FlinkOptions.INDEX_KEY_FIELD))
           .setIndexNumBuckets(conf.getInteger(FlinkOptions.BUCKET_INDEX_NUM_BUCKETS))
           .initTable(hadoopConf, basePath);
       LOG.info("Table initialized under base path {}", basePath);
