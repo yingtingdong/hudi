@@ -25,12 +25,14 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
 import org.apache.spark.sql.connector.catalog.{Table, V1Table}
+import org.apache.spark.sql.execution.command.ShowTablePropertiesCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.hudi.HoodieSqlCommonUtils.{castIfNeeded, removeMetaFields}
 import org.apache.spark.sql.hudi.ProvidesHoodieConfig
 import org.apache.spark.sql.hudi.catalog.HoodieInternalV2Table
-import org.apache.spark.sql.hudi.command.{AlterHoodieTableDropPartitionCommand, ShowHoodieTablePartitionsCommand, TruncateHoodieTableCommand}
+import org.apache.spark.sql.hudi.command.{AlterHoodieTableDropPartitionCommand, ShowHoodieTablePartitionsCommand, ShowHoodieTablePropertiesCommand, TruncateHoodieTableCommand}
+import org.apache.spark.sql.hudi.{HoodieSqlCommonUtils, ProvidesHoodieConfig}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
@@ -150,7 +152,7 @@ case class HoodieSpark3PostAnalysisRule(sparkSession: SparkSession) extends Rule
           purge,
           retainData = true
         )
-
+      case s: ShowTablePropertiesCommand => ShowHoodieTablePropertiesCommand(s.table, s.propertyKey)
       case _ => plan
     }
   }

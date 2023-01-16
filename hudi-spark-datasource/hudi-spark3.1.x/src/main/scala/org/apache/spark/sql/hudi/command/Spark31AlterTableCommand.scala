@@ -29,7 +29,7 @@ import org.apache.hudi.common.model.{HoodieCommitMetadata, WriteOperationType}
 import org.apache.hudi.{AvroConversionUtils, DataSourceOptionsHelper, DataSourceUtils}
 import org.apache.hudi.common.table.timeline.{HoodieActiveTimeline, HoodieInstant}
 import org.apache.hudi.common.table.timeline.HoodieInstant.State
-import org.apache.hudi.common.table.{HoodieTableMetaClient, TableSchemaResolver}
+import org.apache.hudi.common.table.{HoodieTableConfig, HoodieTableMetaClient, TableSchemaResolver}
 import org.apache.hudi.common.util.{CommitUtils, Option}
 import org.apache.hudi.config.HoodieWriteConfig
 import org.apache.hudi.internal.schema.InternalSchema
@@ -48,6 +48,7 @@ import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, DeleteColu
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.types.StructType
 
+import java.util.Properties
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
@@ -169,6 +170,12 @@ case class Spark31AlterTableCommand(table: CatalogTable, changes: Seq[TableChang
     val newProperties = table.properties.filter { case (k, _) => !propKeys.contains(k) }
     val newTable = table.copy(properties = newProperties, comment = tableComment)
     catalog.alterTable(newTable)
+
+    // delete hoodie table's config file
+    val deleteProps: util.Set[String] = new util.HashSet[String]()
+    propKeys.foreach(v => deleteProps.add(v))
+    Spark31AlterTableCommand.deleteTableProperties(sparkSession, deleteProps, table)
+
     logInfo("table properties change finished")
   }
 
@@ -183,6 +190,12 @@ case class Spark31AlterTableCommand(table: CatalogTable, changes: Seq[TableChang
       properties = table.properties ++ properties,
       comment = properties.get(TableCatalog.PROP_COMMENT).orElse(table.comment))
     catalog.alterTable(newTable)
+
+    // upserts the hoodie table's config file
+    val updatedProps = new Properties
+    properties.foreach(u => updatedProps.setProperty(u._1, u._2))
+    Spark31AlterTableCommand.updateTableProperties(sparkSession, updatedProps, table)
+
     logInfo("table properties change finished")
   }
 
@@ -319,6 +332,22 @@ object Spark31AlterTableCommand extends Logging {
         throw new UnsupportedOperationException("cannot support apply changes for primaryKey/CombineKey/partitionKey")
       }
     }
+  }
+
+  def updateTableProperties(sparkSession: SparkSession, updatedProps: Properties, table: CatalogTable): Any = {
+    val path = Spark31AlterTableCommand.getTableLocation(table, sparkSession)
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
+    val metaClient = HoodieTableMetaClient.builder().setBasePath(path)
+      .setConf(hadoopConf).build()
+    HoodieTableConfig.update(metaClient.getFs, new Path(metaClient.getMetaPath), updatedProps)
+  }
+
+  def deleteTableProperties(sparkSession: SparkSession, deletedProps: util.Set[String], table: CatalogTable): Any = {
+    val path = Spark31AlterTableCommand.getTableLocation(table, sparkSession)
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
+    val metaClient = HoodieTableMetaClient.builder().setBasePath(path)
+      .setConf(hadoopConf).build()
+    HoodieTableConfig.delete(metaClient.getFs, new Path(metaClient.getMetaPath), deletedProps)
   }
 }
 

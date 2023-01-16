@@ -22,7 +22,10 @@ import org.apache.hudi.common.model.HoodieRecord
 import org.apache.hudi.common.testutils.HoodieTestDataGenerator
 import org.apache.hudi.common.testutils.RawTripTestPayload
 import org.apache.hudi.config.HoodieWriteConfig
+import org.apache.hudi.sync.common.HoodieMetaSyncOperations
 import org.apache.hudi.{DataSourceWriteOptions, HoodieSparkUtils}
+import org.apache.hudi.sync.common.HoodieMetaSyncOperations
+import org.apache.hudi.{DataSourceReadOptions, DataSourceWriteOptions, HoodieSparkUtils}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.functions.{arrays_zip, col}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
@@ -188,6 +191,12 @@ class TestSpark3DDL extends HoodieSparkSqlTestBase {
           val meta = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
           assert(meta.comment.get.equals("it is a hudi table"))
           assert(Seq("key1", "key2").filter(meta.properties.contains(_)).size == 2)
+
+          // test show properties
+          assertResult(tableName) {
+            spark.sql(s"SHOW TBLPROPERTIES $tableName ('hoodie.table.name')").collect().apply(0).get(0)
+          }
+
           // test unset propertes
           spark.sql(s"alter table $tableName unset tblproperties(comment, 'key1', 'key2')")
           val unsetMeta = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
