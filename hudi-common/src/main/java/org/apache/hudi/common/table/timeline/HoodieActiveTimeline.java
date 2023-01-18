@@ -27,6 +27,7 @@ import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.StringUtils;
 import org.apache.hudi.common.util.ValidationUtils;
 import org.apache.hudi.common.util.collection.Pair;
+import org.apache.hudi.exception.HoodieException;
 import org.apache.hudi.exception.HoodieIOException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -774,10 +775,18 @@ public class HoodieActiveTimeline extends HoodieDefaultTimeline {
   }
 
   private Option<byte[]> readDataFromPath(Path detailPath) {
-    try (FSDataInputStream is = metaClient.getFs().open(detailPath)) {
-      return Option.of(FileIOUtils.readAsByteArray(is));
-    } catch (IOException e) {
-      throw new HoodieIOException("Could not read commit details from " + detailPath, e);
+    try {
+      if (metaClient.getFs().exists(detailPath)) {
+        try (FSDataInputStream is = metaClient.getFs().open(detailPath)) {
+          return Option.of(FileIOUtils.readAsByteArray(is));
+        } catch (IOException e) {
+          throw new HoodieIOException("Could not read commit details from " + detailPath, e);
+        }
+      } else {
+        return Option.empty();
+      }
+    } catch (Exception e) {
+      throw new HoodieException("Could not read commit details from " + detailPath, e);
     }
   }
 
