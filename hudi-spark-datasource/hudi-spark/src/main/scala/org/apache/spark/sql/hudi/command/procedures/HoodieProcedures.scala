@@ -90,6 +90,7 @@ object HoodieProcedures {
       ,(ShowTablePropertiesProcedure.NAME, ShowTablePropertiesProcedure.builder)
       ,(HelpProcedure.NAME, HelpProcedure.builder)
       ,(DeleteRollbackInstantProcedure.NAME, DeleteRollbackInstantProcedure.builder)
+      ,(DeleteFsFileProcedure.NAME, DeleteFsFileProcedure.builder)
     )
   }
 }
