@@ -31,10 +31,14 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 import java.util.function.Supplier
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
 class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder with Logging {
   private val PARAMETERS = Array[ProcedureParameter](
-    ProcedureParameter.required(0, "path", DataTypes.StringType, None)
+    ProcedureParameter.required(0, "path", DataTypes.StringType, None),
+    ProcedureParameter.optional(1, "is_partition", DataTypes.BooleanType, false),
+    ProcedureParameter.optional(2, "parallelism", DataTypes.IntegerType, 100)
   )
 
   private val OUTPUT_TYPE = new StructType(Array[StructField](
@@ -50,17 +54,26 @@ class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder 
     super.checkArgs(PARAMETERS, args)
 
     val srcPath = getArgValueOrDefault(args, PARAMETERS(0)).get.asInstanceOf[String]
+    val isPartition = getArgValueOrDefault(args, PARAMETERS(1)).get.asInstanceOf[Boolean]
+    val parallelism = getArgValueOrDefault(args, PARAMETERS(2)).get.asInstanceOf[Int]
+
     val backupPath = new Path(srcPath, ".backup").toString
     val fs = FSUtils.getFs(backupPath, jsc.hadoopConfiguration())
     fs.mkdirs(new Path(backupPath))
 
-    val partitionPaths: java.util.List[String] = FSUtils.getAllPartitionPaths(new HoodieSparkEngineContext(jsc), srcPath, false, false)
-    val javaRdd: JavaRDD[String] = jsc.parallelize(partitionPaths, partitionPaths.size())
     val serHadoopConf = new SerializableConfiguration(jsc.hadoopConfiguration())
+    val partitionPaths: java.util.List[Path] = if (isPartition) {
+      List(new Path(srcPath)).asJava
+    } else {
+      FSUtils.getAllPartitionPaths(new HoodieSparkEngineContext(jsc), srcPath, false, false)
+        .map(part => FSUtils.getPartitionPath(srcPath, part))
+        .toList.asJava
+    }
+    val javaRdd: JavaRDD[Path] = jsc.parallelize(partitionPaths, partitionPaths.size())
     val invalidParquetCount = javaRdd.rdd.map(part => {
       val fs = FSUtils.getFs(new Path(srcPath), serHadoopConf.get())
-      FSUtils.getAllDataFilesInPartition(fs, FSUtils.getPartitionPath(srcPath, part))
-    }).flatMap(_.toList)
+      FSUtils.getAllDataFilesInPartition(fs, part)
+    }).flatMap(_.toList).repartition(parallelism)
       .filter(status => {
         val filePath = status.getPath
         var isInvalid = false

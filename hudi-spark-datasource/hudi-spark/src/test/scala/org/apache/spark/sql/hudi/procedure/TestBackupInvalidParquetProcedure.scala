@@ -55,16 +55,22 @@ class TestBackupInvalidParquetProcedure extends HoodieSparkProcedureTestBase {
       out1.write(1)
       out1.close()
 
+      assertResult(1) {
+        spark.sql(
+          s"""call show_invalid_parquet(path => '$basePath')""".stripMargin)
+          .collect().length
+      }
+
+      val result1 = spark.sql(
+        s"""call backup_invalid_parquet(path => '$basePath/ts=1500', is_partition => true)""".stripMargin).collect()
+      assertResult(1) {
+        result1.length
+      }
+
       val invalidPath2 = new Path(basePath, "ts=1500/2.parquet")
       val out2 = fs.create(invalidPath2)
       out2.write(1)
       out2.close()
-
-      val result1 = spark.sql(
-        s"""call show_invalid_parquet(path => '$basePath')""".stripMargin).collect()
-      assertResult(2) {
-        result1.length
-      }
 
       val result2 = spark.sql(
         s"""call backup_invalid_parquet(path => '$basePath')""".stripMargin).collect()
@@ -77,7 +83,6 @@ class TestBackupInvalidParquetProcedure extends HoodieSparkProcedureTestBase {
       assertResult(0) {
         result3.length
       }
-
     }
   }
 }
