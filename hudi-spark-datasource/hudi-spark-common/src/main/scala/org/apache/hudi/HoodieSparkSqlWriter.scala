@@ -93,7 +93,7 @@ object HoodieSparkSqlWriter {
       originKeyGeneratorClassName, parameters)
     //validate datasource and tableconfig keygen are the same
     validateKeyGeneratorConfig(originKeyGeneratorClassName, tableConfig);
-    val databaseName = hoodieConfig.getStringOrDefault(HoodieTableConfig.DATABASE_NAME, "")
+    val databaseName = hoodieConfig.getStringOrDefault(HoodieTableConfig.DATABASE_NAME, "default")
     val tblName = hoodieConfig.getStringOrThrow(HoodieWriteConfig.TBL_NAME,
       s"'${HoodieWriteConfig.TBL_NAME.key}' must be set.").trim
     assert(!StringUtils.isNullOrEmpty(hoodieConfig.getString(HoodieWriteConfig.TBL_NAME)),
@@ -186,7 +186,6 @@ object HoodieSparkSqlWriter {
       // scalastyle:off
       if (hoodieConfig.getBoolean(ENABLE_ROW_WRITER) &&
         operation == WriteOperationType.BULK_INSERT) {
-        parameters.put(HoodieWriteConfig.DATABASE_NAME.key(), databaseName)
         val (success, commitTime: common.util.Option[String]) = bulkInsertAsRow(sqlContext, parameters, df, tblName,
           basePath, path, instantTime, partitionColumns)
         return (success, commitTime, common.util.Option.empty(), common.util.Option.empty(), hoodieWriteClient.orNull, tableConfig)
@@ -568,7 +567,6 @@ object HoodieSparkSqlWriter {
     }
     val params: mutable.Map[String, String] = collection.mutable.Map(parameters.toSeq: _*)
     params(HoodieWriteConfig.AVRO_SCHEMA_STRING.key) = schema.toString
-    val dbName = parameters.getOrElse(HoodieWriteConfig.DATABASE_NAME.key(), "default")
     val writeConfig = DataSourceUtils.createHoodieConfig(schema.toString, path, tblName, mapAsJavaMap(params))
     val bulkInsertPartitionerRows: BulkInsertPartitioner[Dataset[Row]] = if (populateMetaFields) {
       val userDefinedBulkInsertPartitionerOpt = DataSourceUtils.createUserDefinedBulkInsertPartitionerWithRows(writeConfig)
