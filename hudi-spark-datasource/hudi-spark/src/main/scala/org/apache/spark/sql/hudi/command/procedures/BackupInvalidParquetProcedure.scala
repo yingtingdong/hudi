@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.{DataTypes, Metadata, StructField, StructType}
 
 import java.util.function.Supplier
 import scala.collection.JavaConversions.asScalaBuffer
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class BackupInvalidParquetProcedure extends BaseProcedure with ProcedureBuilder with Logging {
   private val PARAMETERS = Array[ProcedureParameter](
