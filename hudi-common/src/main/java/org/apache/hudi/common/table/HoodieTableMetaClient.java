@@ -497,6 +497,22 @@ public class HoodieTableMetaClient implements Serializable {
     return metaClient;
   }
 
+  /**
+   * Helper method to initialize a given path as a hoodie table with configs passed in as Properties.
+   *
+   * @return Instance of HoodieTableMetaClient
+   */
+  public static HoodieTableMetaClient updateTableAndGetMetaClient(Configuration hadoopConf, String basePath,
+                                                                Properties props) {
+    LOG.info("Update hoodie table with basePath " + basePath);
+
+    HoodieTableMetaClient metaClient = HoodieTableMetaClient.builder().setBasePath(basePath)
+        .setConf(hadoopConf).build();
+    HoodieTableConfig.update(metaClient.getFs(), new Path(metaClient.getMetaPath()), props);
+    LOG.info("Finished update Table of type " + metaClient.getTableConfig().getTableType() + " from " + basePath);
+    return metaClient;
+  }
+
   public static void initializeBootstrapDirsIfNotExists(Configuration hadoopConf, String basePath, FileSystem fs) throws IOException {
 
     // Create bootstrap index by partition folder if it does not exist
@@ -1183,5 +1199,8 @@ public class HoodieTableMetaClient implements Serializable {
       return HoodieTableMetaClient.initTableAndGetMetaClient(configuration, basePath, build());
     }
 
+    public HoodieTableMetaClient updateTable(Configuration configuration, String basePath) {
+      return HoodieTableMetaClient.updateTableAndGetMetaClient(configuration, basePath, build());
+    }
   }
 }
